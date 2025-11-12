@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <!-- 
+    We check if the 'history' list is empty.
+    The 'else' block would show the history items if they existed.
+  -->
+  {% if not history %}
+    <!-- This block mimics the "empty state" from your image -->
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-8 col-lg-6">
+        <div class="empty-state-card">
+          <!-- Using a Bootstrap Icon -->
+          <i class="bi bi-clock-history empty-state-icon mb-3"></i>
+          <h3 class="fw-bold">No analysis history</h3>
+          <p class="text-muted">
+            Your completed analyses will appear here.
+          </p>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <!-- This is where you would loop through history items -->
+    <ul class="list-group">
+      {% for item in history %}
+        <li class="list-group-item">
+          {{ item.name }} - {{ item.date }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

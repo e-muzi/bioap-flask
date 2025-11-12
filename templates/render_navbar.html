@@ -1,0 +1,60 @@
+{% macro render_navbar(page_title) %}
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style="border-bottom: 1px solid #dee2e6;">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('index') }}">
+      <i class="bi bi-shield-check text-success"></i>
+      PestiGuard Analysis
+    </a>
+    
+    <span class="navbar-text fs-5 fw-bold">
+      {{ page_title }}
+    </span>
+
+    <div class="d-none d-lg-flex ms-auto">
+      <ul class="navbar-nav flex-row align-items-center">
+        <li class="nav-item px-2">
+          <a class="nav-link text-secondary" href="{{ url_for('index') }}">
+            <i class="bi bi-bar-chart-line-fill"></i>
+            <span class="ms-1">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item px-2">
+          <a class="nav-link text-secondary" href="{{ url_for('history') }}">
+            <i class="bi bi-clock-history"></i>
+            <span class="ms-1">History</span>
+          </a>
+        </li>
+        <li class="nav-item px-2">
+          <a class="nav-link text-secondary" href="{{ url_for('settings') }}">
+            <i class="bi bi-gear-fill"></i>
+            <span class="ms-1">Settings</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="fixed-bottom d-lg-none bg-white shadow-lg" style="border-top: 1px solid #dee2e6;">
+      <div class="d-flex justify-content-around p-2">
+        <a href="{{ url_for('index') }}" class="btn btn-link text-secondary text-decoration-none">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-bar-chart-line-fill fs-3"></i>
+            <small>Dashboard</small>
+          </div>
+        </a>
+        <a href="{{ url_for('history') }}" class="btn btn-link text-secondary text-decoration-none">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-clock-history fs-3"></i>
+            <small>History</small>
+          </div>
+        </a>
+        <a href="{{ url_for('settings') }}" class="btn btn-link text-secondary text-decoration-none">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-gear-fill fs-3"></i>
+            <small>Settings</small>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</nav>
+{% endmacro %}
