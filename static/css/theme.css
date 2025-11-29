@@ -1,0 +1,150 @@
+/* PestiGuard BioAP theme - light and dark palettes */
+:root {
+  /* Brand and semantic colors */
+  --bs-primary: #2F7D32;
+  --bs-primary-rgb: 47, 125, 50;
+  --bs-success: #6DBF4B;
+  --bs-success-rgb: 109, 191, 75;
+  --bs-secondary: #6B7A6F;
+  --bs-secondary-rgb: 107, 122, 111;
+  --bs-info: #4E9F8A;
+  --bs-info-rgb: 78, 159, 138;
+  --bs-warning: #E1A700;
+  --bs-warning-rgb: 225, 167, 0;
+  --bs-danger: #B03A2E;
+  --bs-danger-rgb: 176, 58, 46;
+
+  /* Surfaces and text */
+  --bs-body-bg: #F6F7F2;
+  --bs-body-color: #2B2B2B;
+  --bs-border-color: #D7DCCF;
+
+  /* Custom surfaces */
+  --ag-surface: #FFFFFF;
+  --ag-surface-subtle: #FAFAF7;
+  --ag-navbar-bg: #FFFFFF;
+  --ag-navbar-border: var(--bs-border-color);
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+  /* Tuned emerald palette for dark mode */
+  --bs-primary: #4CAF50;
+  --bs-primary-rgb: 76, 175, 80;
+  --bs-success: #84E28A;
+  --bs-success-rgb: 132, 226, 138;
+  --bs-secondary: #C2CEC7;
+  --bs-secondary-rgb: 194, 206, 199;
+  --bs-info: #73D0B8;
+  --bs-info-rgb: 115, 208, 184;
+  --bs-warning: #F0C85A;
+  --bs-warning-rgb: 240, 200, 90;
+  --bs-danger: #EF6E63;
+  --bs-danger-rgb: 239, 110, 99;
+
+  --bs-body-bg: #101311;            /* deep greenish charcoal */
+  --bs-body-color: #EEF2EE;         /* brighter text for contrast */
+  --bs-border-color: #3B463F;
+
+  --ag-surface: #151A17;
+  --ag-surface-subtle: #111612;
+  --ag-navbar-bg: #141915;
+  --ag-navbar-border: var(--bs-border-color);
+
+  /* Help browsers render native controls in dark mode */
+  color-scheme: dark;
+}
+
+/* Navbar tweaks to use themed surfaces */
+.navbar.bg-white {
+  background-color: var(--ag-navbar-bg) !important;
+  border-bottom: 1px solid var(--ag-navbar-border) !important;
+}
+
+/* Improve readability of links and "secondary" text in dark mode */
+[data-theme="dark"] a,
+[data-theme="dark"] .nav-link,
+[data-theme="dark"] .navbar .nav-link,
+[data-theme="dark"] .navbar-brand,
+[data-theme="dark"] .navbar-text {
+  color: var(--bs-body-color) !important;
+}
+[data-theme="dark"] .text-muted {
+  color: #B8C2BC !important;
+}
+[data-theme="dark"] .text-secondary:not(.nav-link) {
+  color: var(--bs-secondary) !important;
+}
+[data-theme="dark"] .btn-outline-secondary {
+  color: var(--bs-secondary);
+  border-color: var(--bs-secondary);
+}
+
+/* Form controls (fix "flash white" file input and selects) */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .input-group-text {
+  background-color: #1A1F1C;
+  color: var(--bs-body-color);
+  border-color: var(--bs-border-color);
+}
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: #1A1F1C;
+  color: var(--bs-body-color);
+  border-color: rgba(var(--bs-primary-rgb), 0.6);
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+}
+[data-theme="dark"] ::placeholder {
+  color: #A8B2AD;
+  opacity: 1;
+}
+[data-theme="dark"] input[type="file"]::file-selector-button {
+  background-color: var(--bs-primary);
+  color: #fff;
+  border: 1px solid rgba(var(--bs-primary-rgb), .5);
+}
+[data-theme="dark"] input[type="file"]::-webkit-file-upload-button {
+  background-color: var(--bs-primary);
+  color: #fff;
+  border: 1px solid rgba(var(--bs-primary-rgb), .5);
+}
+[data-theme="dark"] .form-check-input {
+  background-color: #1A1F1C;
+  border-color: var(--bs-border-color);
+}
+[data-theme="dark"] .form-check-input:checked {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+/* Prevent white bars for generic bg-white containers (e.g., mobile bottom nav) */
+[data-theme="dark"] .bg-white {
+  background-color: var(--ag-surface) !important;
+}
+[data-theme="dark"] .border,
+[data-theme="dark"] [style*="border-top: 1px solid #dee2e6"] {
+  border-color: var(--bs-border-color) !important;
+}
+
+/* Card and table subtle polish to match agricultural look */
+.card {
+  background-color: var(--ag-surface);
+  border-color: var(--bs-border-color);
+}
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: inherit;
+  --bs-table-border-color: var(--bs-border-color);
+}
+
+/* Utility: themed empty state card and icon colors */
+.empty-state-card {
+  background-color: var(--ag-surface);
+  border-color: var(--bs-border-color);
+}
+.empty-state-icon {
+  color: var(--bs-secondary);
+}
+
+

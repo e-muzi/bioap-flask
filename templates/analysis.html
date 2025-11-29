@@ -59,8 +59,9 @@
               {% set left_pct = (r.x / width * 100.0) %}
               {% set top_pct = (r.y / height * 100.0) %}
               <div class="position-absolute translate-middle"
-                   style="left: {{ '%.2f'|format(left_pct) }}%; top: {{ '%.2f'|format(top_pct) }}%;">
-                <span class="d-inline-block rounded-circle" style="width: 14px; height: 14px; background: #0d6efd; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(13,110,253,.5);"></span>
+                   data-left-pct="{{ '%.2f'|format(left_pct) }}"
+                   data-top-pct="{{ '%.2f'|format(top_pct) }}">
+                <span class="d-inline-block rounded-circle" style="width: 14px; height: 14px; background: var(--bs-primary); border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), .5);"></span>
               </div>
             {% endfor %}
           </div>
@@ -107,14 +108,15 @@
     <div class="card-body">
       <h6 class="mb-3">Adjust sampling points</h6>
       <div class="position-relative d-inline-block" id="preview-container">
-        <img id="preview-img" src="/{{ image_path }}" class="img-fluid rounded border" alt="preview">
+        <img id="preview-img" src="/{{ image_path }}" class="img-fluid rounded border" alt="preview" data-img-width="{{ width }}" data-img-height="{{ height }}">
         {% for p in points %}
           {% set left_pct = (p.x / width * 100.0) %}
           {% set top_pct = (p.y / height * 100.0) %}
           <div class="drag-point position-absolute translate-middle"
                data-index="{{ loop.index0 }}"
-               style="left: {{ '%.2f'|format(left_pct) }}%; top: {{ '%.2f'|format(top_pct) }}%;">
-            <span class="d-inline-block rounded-circle" style="width: 16px; height: 16px; background: #dc3545; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(220,53,69,.5); cursor: grab;"></span>
+               data-left-pct="{{ '%.2f'|format(left_pct) }}"
+               data-top-pct="{{ '%.2f'|format(top_pct) }}">
+            <span class="d-inline-block rounded-circle" style="width: 16px; height: 16px; background: var(--bs-danger); border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(var(--bs-danger-rgb), .5); cursor: grab;"></span>
           </div>
         {% endfor %}
       </div>
@@ -139,9 +141,25 @@
       const img = document.getElementById('preview-img');
       const container = document.getElementById('preview-container');
       const dots = Array.from(container.querySelectorAll('.drag-point'));
-      const W = {{ width }};
-      const H = {{ height }};
-      let points = {{ points|tojson }};
+      const W = parseInt(img.getAttribute('data-img-width'), 10) || (img.naturalWidth || 0);
+      const H = parseInt(img.getAttribute('data-img-height'), 10) || (img.naturalHeight || 0);
+      // Initialize positions for any elements with data-left-pct/top-pct
+      document.querySelectorAll('[data-left-pct][data-top-pct]').forEach(function(el){
+        const lp = parseFloat(el.getAttribute('data-left-pct'));
+        const tp = parseFloat(el.getAttribute('data-top-pct'));
+        if (!Number.isNaN(lp) && !Number.isNaN(tp)) {
+          el.style.left = lp.toFixed(2) + '%';
+          el.style.top = tp.toFixed(2) + '%';
+        }
+      });
+      let points = dots.map(dot => {
+        const leftPct = parseFloat(dot.style.left) || 0;
+        const topPct = parseFloat(dot.style.top) || 0;
+        return {
+          x: Math.round(W * leftPct / 100),
+          y: Math.round(H * topPct / 100)
+        };
+      });
 
       function updateHidden() {
         const out = dots.map((el, i) => points[i]);
@@ -219,6 +237,19 @@
     })();
   </script>
   {% endif %}
+  <script>
+    (function() {
+      // Apply left/top styles for any elements that carry percentage data attributes
+      document.querySelectorAll('[data-left-pct][data-top-pct]').forEach(function(el){
+        const lp = parseFloat(el.getAttribute('data-left-pct'));
+        const tp = parseFloat(el.getAttribute('data-top-pct'));
+        if (!Number.isNaN(lp) && !Number.isNaN(tp)) {
+          el.style.left = lp.toFixed(2) + '%';
+          el.style.top = tp.toFixed(2) + '%';
+        }
+      });
+    })();
+  </script>
   <script>
     (function() {
       const startBtn = document.getElementById('startCamBtn');

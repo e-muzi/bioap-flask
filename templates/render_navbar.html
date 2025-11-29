@@ -1,8 +1,8 @@
 {% macro render_navbar(page_title) %}
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style="border-bottom: 1px solid #dee2e6;">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style="border-bottom: 1px solid var(--bs-border-color);">
   <div class="container-fluid">
     <a class="navbar-brand" href="{{ url_for('index') }}">
-      <i class="bi bi-shield-check text-success"></i>
+      <img src="{{ url_for('public_files', filename='BioAP_Logo.PNG') }}" alt="PestiGuard" style="height:28px;" class="me-2 align-text-bottom">
       PestiGuard Analysis
     </a>
     
@@ -48,9 +48,15 @@
             <span class="ms-1">About</span>
           </a>
         </li>
+        <li class="nav-item px-2">
+          <button id="themeToggle" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+            <i class="bi bi-moon-stars"></i>
+            <span class="ms-1 d-none d-xl-inline">Theme</span>
+          </button>
+        </li>
       </ul>
     </div>
-    <div class="fixed-bottom d-lg-none bg-white shadow-lg" style="border-top: 1px solid #dee2e6;">
+    <div class="fixed-bottom d-lg-none bg-white shadow-lg" style="border-top: 1px solid var(--bs-border-color);">
       <div class="d-flex justify-content-around p-2">
         <a href="{{ url_for('index') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
@@ -88,6 +94,12 @@
             <small>About</small>
           </div>
         </a>
+        <button id="themeToggle" class="btn btn-link text-secondary text-decoration-none">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-moon-stars fs-3"></i>
+            <small>Theme</small>
+          </div>
+        </button>
       </div>
     </div>
 

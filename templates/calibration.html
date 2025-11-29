@@ -202,9 +202,25 @@
     <div class="alert alert-info">No pesticides found in the active profile.</div>
   {% endif %}
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="application/json" id="pesticides-data">
+  [
+    {% for p in pesticides %}
+    {
+      "id": {{ p.id }},
+      "display_name": "{{ p.display_name|replace('\"', '\\\"') }}",
+      "points": [
+        {% for pt in p.points %}
+        { "concentration": {{ pt.concentration }}, "rgb_sum": {{ pt.rgb_sum }} }{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      ]
+    }{% if not loop.last %}, {% endif %}
+    {% endfor %}
+  ]
+  </script>
   <script>
     (function() {
-      const pesticides = {{ pesticides|tojson }};
+      const raw = document.getElementById('pesticides-data');
+      const pesticides = JSON.parse((raw && raw.textContent) || '[]');
       pesticides.forEach(p => {
         const el = document.getElementById('chart-' + p.id);
         if (!el) return;

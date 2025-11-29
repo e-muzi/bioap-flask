@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, session, render_template_string, render_template, request, flash,jsonify
+from flask import Flask, redirect, url_for, session, render_template_string, render_template, request, flash, jsonify, send_from_directory
 from flask_session import Session
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
@@ -894,6 +894,10 @@ def about():
     """Renders the about page."""
     return render_template('about.html', title="About")
 
+@app.route('/public/<path:filename>')
+def public_files(filename: str):
+    """Serve assets from the project 'public' directory (e.g., logo)."""
+    return send_from_directory('public', filename)
 
     
 if __name__ == "__main__":
