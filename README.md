@@ -5,7 +5,7 @@ It computes RGB totals, calculated concentrations using calibration curves, clas
 
 **Important!** BioAP is now avaliable on: https://bioap.26650078.xyz
 
-![BioAP Logo](public/BioAP_Logo.PNG)
+<img src="public/BioAP_Logo.PNG" alt="BioAP Logo" width="150" />
 
 ### Features
 - **Analysis**: Upload/capture an image, auto-place N points, optionally enable background normalization, compute concentrations, and view results.
