@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% block title %}Calibration - PestiGuard{% endblock %}
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-2">Calibration</h5>
+      {% if not profile %}
+        <div class="alert alert-warning mb-0">No active profile found.</div>
+      {% else %}
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-lg-6">
+            <label class="form-label">Active profile</label>
+            <div class="input-group">
+              <span class="input-group-text">{{ profile.name }}</span>
+              <a href="{{ url_for('profiles_export', profile_id=profile.id) }}" class="btn btn-outline-primary">Export</a>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="border rounded p-2">
+              <div class="fw-semibold mb-2">Profiles</div>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Active</th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for p in all_profiles %}
+                    <tr>
+                      <td>{{ p.name }}</td>
+                      <td>
+                        {% if p.is_active %}
+                          <span class="badge bg-success">Active</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('profiles_export', profile_id=p.id) }}">Export</a>
+                        {% if not p.is_active %}
+                          <form method="post" action="{{ url_for('profiles_activate', profile_id=p.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
+                          </form>
+                          {% if p.name|lower != 'default' %}
+                          <form method="post" action="{{ url_for('profiles_delete', profile_id=p.id) }}" class="d-inline" onsubmit="return confirm('Delete profile {{ p.name }}?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                          </form>
+                          {% endif %}
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <form class="row g-2" method="post" action="{{ url_for('profiles_create') }}">
+              <div class="col-8">
+                <label class="form-label">Create profile</label>
+                <input type="text" name="name" class="form-control" placeholder="New profile name" required>
+              </div>
+              <div class="col-4 d-grid">
+                <label class="form-label invisible">Create</label>
+                <button type="submit" class="btn btn-outline-success">Create</button>
+              </div>
+            </form>
+          </div>
+          <div class="col-12 col-lg-6">
+            <form class="row g-2" method="post" action="{{ url_for('profiles_clone', profile_id=profile.id) }}">
+              <div class="col-8">
+                <label class="form-label">Clone active as</label>
+                <input type="text" name="name" class="form-control" placeholder="{{ profile.name }} Copy">
+              </div>
+              <div class="col-4 d-grid">
+                <label class="form-label invisible">Clone</label>
+                <button type="submit" class="btn btn-outline-secondary">Clone</button>
+              </div>
+            </form>
+          </div>
+          <div class="col-12 col-lg-6">
+            <form class="row g-2" method="post" action="{{ url_for('profiles_import') }}" enctype="multipart/form-data">
+              <div class="col-8">
+                <label class="form-label">Import profile (JSON)</label>
+                <input type="file" name="file" class="form-control" accept="application/json" required>
+              </div>
+              <div class="col-4 d-grid">
+                <label class="form-label invisible">Import</label>
+                <button type="submit" class="btn btn-outline-primary">Import</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+      <p class="small mb-0">Default mode: edit calibration points only. Customize mode: thresholds editable.</p>
+    </div>
+  </div>
+
+  {% if pesticides and pesticides|length > 0 %}
+  <form method="post" action="{{ url_for('calibration_save') }}">
+    {% for pest in pesticides %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">{{ pest.display_name }}</h6>
+            <span class="badge bg-secondary">{{ pest.key }}</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th style="width: 160px;">Concentration</th>
+                  <th style="width: 160px;">RGB total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in pest.points %}
+                <tr>
+                  <td>
+                    <input type="number" step="0.01" class="form-control form-control-sm"
+                           name="concentration-{{ pest.id }}-{{ loop.index0 }}"
+                           value="{{ '%.2f'|format(row.concentration) }}" required>
+                  </td>
+                  <td>
+                    <input type="number" step="1" class="form-control form-control-sm"
+                           name="rgb-{{ pest.id }}-{{ loop.index0 }}"
+                           value="{{ row.rgb_sum }}" required>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="row g-3 align-items-center">
+            <div class="col-12 col-lg-8">
+              <canvas id="chart-{{ pest.id }}" height="120"></canvas>
+            </div>
+            <div class="col-12 col-lg-4">
+              <div class="border rounded p-2">
+                <div class="fw-semibold mb-2">Thresholds</div>
+                {% if is_customize %}
+                  <div class="row g-2">
+                    {% for band in ['low','medium','high'] %}
+                      <div class="col-12">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text text-capitalize" style="width: 90px;">{{ band }}</span>
+                          <span class="input-group-text" style="width: 50px;">Min</span>
+                          <input type="number" step="0.01" class="form-control"
+                                 name="thresh-{{ band }}-min-{{ pest.id }}"
+                                 value="{{ pest.thresholds.get(band).min if pest.thresholds.get(band) else '' }}">
+                          <span class="input-group-text" style="width: 50px;">Max</span>
+                          <input type="number" step="0.01" class="form-control"
+                                 name="thresh-{{ band }}-max-{{ pest.id }}"
+                                 value="{{ pest.thresholds.get(band).max if pest.thresholds.get(band) else '' }}">
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {% if pest.thresholds %}
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <thead>
+                          <tr>
+                            <th>Band</th>
+                            <th class="text-end">Min</th>
+                            <th class="text-end">Max</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for band in ['low','medium','high'] %}
+                            {% if pest.thresholds.get(band) %}
+                            <tr>
+                              <td class="text-capitalize">{{ band }}</td>
+                              <td class="text-end">{{ '%.2f'|format(pest.thresholds[band].min) }}</td>
+                              <td class="text-end">{{ '%.2f'|format(pest.thresholds[band].max) }}</td>
+                            </tr>
+                            {% endif %}
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  {% else %}
+                    <div class="text-muted small">No thresholds configured.</div>
+                  {% endif %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+    <div class="d-flex justify-content-end">
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+  </form>
+  {% else %}
+    <div class="alert alert-info">No pesticides found in the active profile.</div>
+  {% endif %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function() {
+      const pesticides = {{ pesticides|tojson }};
+      pesticides.forEach(p => {
+        const el = document.getElementById('chart-' + p.id);
+        if (!el) return;
+        const points = (p.points || []).slice().sort((a,b) => a.concentration - b.concentration);
+        const labels = points.map(pt => pt.concentration);
+        const data = points.map(pt => pt.rgb_sum);
+        new Chart(el.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: p.display_name + ' RGB vs Concentration',
+              data,
+              borderColor: '#0d6efd',
+              backgroundColor: 'rgba(13,110,253,0.1)',
+              fill: true,
+              pointRadius: 3,
+              tension: 0.2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                title: { display: true, text: 'Concentration' }
+              },
+              y: {
+                title: { display: true, text: 'RGB total' }
+              }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: { mode: 'index', intersect: false }
+            }
+          }
+        });
+      });
+    })();
+  </script>
+{% endblock %}
+
+

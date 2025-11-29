@@ -1,0 +1,93 @@
+# --- Python basics ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.so
+
+# --- Packaging / build artifacts ---
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+pip-wheel-metadata/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Virtual environments ---
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# --- Test / coverage / typing caches ---
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+htmlcov/
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.nox/
+.tox/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Flask app specifics ---
+# Flask instance folder (configs, dbs, etc.)
+instance/
+# Local env files
+.flaskenv
+.env.local
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-*
+
+# User uploads: keep folder with .gitkeep only
+static/uploads/*
+!static/uploads/.gitkeep
+
+# --- Editors / IDEs ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- Node (if present for frontend assets) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- UV / lockfiles ---
+# Keep uv.lock tracked; do not ignore
+# uv creates per-project venvs sometimes named .venv which we already ignore
+
+

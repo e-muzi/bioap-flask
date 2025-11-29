@@ -19,6 +19,18 @@
           </a>
         </li>
         <li class="nav-item px-2">
+          <a class="nav-link text-secondary" href="{{ url_for('analysis') }}">
+            <i class="bi bi-camera"></i>
+            <span class="ms-1">Analysis</span>
+          </a>
+        </li>
+        <li class="nav-item px-2">
+          <a class="nav-link text-secondary" href="{{ url_for('calibration') }}">
+            <i class="bi bi-sliders"></i>
+            <span class="ms-1">Calibration</span>
+          </a>
+        </li>
+        <li class="nav-item px-2">
           <a class="nav-link text-secondary" href="{{ url_for('history') }}">
             <i class="bi bi-clock-history"></i>
             <span class="ms-1">History</span>
@@ -28,6 +40,12 @@
           <a class="nav-link text-secondary" href="{{ url_for('settings') }}">
             <i class="bi bi-gear-fill"></i>
             <span class="ms-1">Settings</span>
+          </a>
+        </li>
+        <li class="nav-item px-2">
+          <a class="nav-link text-secondary" href="{{ url_for('about') }}">
+            <i class="bi bi-info-circle"></i>
+            <span class="ms-1">About</span>
           </a>
         </li>
       </ul>
@@ -40,6 +58,18 @@
             <small>Dashboard</small>
           </div>
         </a>
+        <a href="{{ url_for('analysis') }}" class="btn btn-link text-secondary text-decoration-none">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-camera fs-3"></i>
+            <small>Analysis</small>
+          </div>
+        </a>
+        <a href="{{ url_for('calibration') }}" class="btn btn-link text-secondary text-decoration-none">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-sliders fs-3"></i>
+            <small>Calibration</small>
+          </div>
+        </a>
         <a href="{{ url_for('history') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-clock-history fs-3"></i>
@@ -50,6 +80,12 @@
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-gear-fill fs-3"></i>
             <small>Settings</small>
+          </div>
+        </a>
+        <a href="{{ url_for('about') }}" class="btn btn-link text-secondary text-decoration-none">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-info-circle fs-3"></i>
+            <small>About</small>
           </div>
         </a>
       </div>

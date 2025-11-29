@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Run Detail - PestiGuard{% endblock %}
+{% block content %}
+  <div class="row g-3">
+    <div class="col-12 col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">{{ run.name }}</h5>
+            <div>
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('history_export', run_id=run.id) }}">Export JSON</a>
+              <form method="post" action="{{ url_for('history_delete', run_id=run.id) }}" class="d-inline" onsubmit="return confirm('Delete this run?');">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </div>
+          </div>
+          <div class="text-muted small mb-3">
+            {{ run.created_at.strftime('%Y-%m-%d %H:%M') }} • Mode: {{ run.mode }} • Profile: {{ run.profile.name if run.profile else '' }}
+          </div>
+          <img src="/{{ run.image_path }}" class="img-fluid rounded border" alt="run image">
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="mb-3">Rename</h6>
+          <form method="post" action="{{ url_for('history_rename', run_id=run.id) }}" class="d-flex gap-2">
+            <input type="text" class="form-control form-control-sm" name="name" value="{{ run.name }}" required>
+            <button class="btn btn-sm btn-primary" type="submit">Save</button>
+          </form>
+        </div>
+      </div>
+      <div class="card mt-3">
+        <div class="card-body">
+          <h6 class="mb-3">Results</h6>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Pesticide</th>
+                  <th class="text-end">RGB</th>
+                  <th class="text-end">Conc</th>
+                  <th class="text-end">Level</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in results %}
+                <tr>
+                  <td>{{ r.pesticide_key }}</td>
+                  <td class="text-end">{{ r.rgb_sum }}</td>
+                  <td class="text-end">{{ '%.2f'|format(r.concentration) }}</td>
+                  <td class="text-end">{{ r.level }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

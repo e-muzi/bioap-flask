@@ -1,32 +1,55 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <!-- 
-    We check if the 'history' list is empty.
-    The 'else' block would show the history items if they existed.
-  -->
+  <form class="row g-2 mb-3" method="get" action="{{ url_for('history') }}">
+    <div class="col-12 col-md-6">
+      <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Search runs by name">
+    </div>
+    <div class="col-12 col-md-6 d-flex justify-content-end">
+      <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </div>
+  </form>
+
   {% if not history %}
-    <!-- This block mimics the "empty state" from your image -->
     <div class="row justify-content-center mt-4">
       <div class="col-md-8 col-lg-6">
         <div class="empty-state-card">
-          <!-- Using a Bootstrap Icon -->
           <i class="bi bi-clock-history empty-state-icon mb-3"></i>
           <h3 class="fw-bold">No analysis history</h3>
-          <p class="text-muted">
-            Your completed analyses will appear here.
-          </p>
+          <p class="text-muted">Your completed analyses will appear here.</p>
         </div>
       </div>
     </div>
   {% else %}
-    <!-- This is where you would loop through history items -->
-    <ul class="list-group">
-      {% for item in history %}
-        <li class="list-group-item">
-          {{ item.name }} - {{ item.date }}
-        </li>
-      {% endfor %}
-    </ul>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Created</th>
+            <th>Mode</th>
+            <th>Profile</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in history %}
+          <tr>
+            <td><a href="{{ url_for('history_detail', run_id=item.id) }}">{{ item.name }}</a></td>
+            <td>{{ item.created_at }}</td>
+            <td class="text-capitalize">{{ item.mode }}</td>
+            <td>{{ item.profile }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('history_detail', run_id=item.id) }}">View</a>
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('history_export', run_id=item.id) }}">Export</a>
+              <form method="post" action="{{ url_for('history_delete', run_id=item.id) }}" class="d-inline" onsubmit="return confirm('Delete this run?');">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
 {% endblock %}

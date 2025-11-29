@@ -8,20 +8,42 @@
         <h4 class="mb-0">Application Settings</h4>
       </div>
       <div class="card-body">
-        <form>
+        <form method="post" action="{{ url_for('settings_save') }}">
           <div class="mb-3">
-            <label for="userEmail" class="form-label">User Email</label>
-            <input type="email" class="form-control" id="userEmail" value="{{ settings.user_email }}" readonly>
-          </div>
-          
-          <div class="form-check form-switch mb-3">
-            <input class="form-check-input" type="checkbox" role="switch" id="notificationSwitch" 
-              {% if settings.notifications_enabled %}checked{% endif %}>
-            <label class="form-check-label" for="notificationSwitch">Enable Push Notifications</label>
+            <label class="form-label d-block">Mode</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="mode" id="modeDefault" value="default" {% if settings.mode == 'default' %}checked{% endif %}>
+              <label class="form-check-label" for="modeDefault">Default</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="mode" id="modeCustomize" value="customize" {% if settings.mode == 'customize' %}checked{% endif %}>
+              <label class="form-check-label" for="modeCustomize">Customize</label>
+            </div>
+            <div class="form-text">Customize mode enables editing thresholds and advanced calibration.</div>
           </div>
 
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-          <button type="button" class="btn btn-outline-danger">Log Out</button>
+          <div class="mb-3">
+            <label class="form-label d-block">Theme</label>
+            <select class="form-select" name="theme">
+              <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>Light</option>
+              <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>Dark</option>
+            </select>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">
+        <h5 class="mb-0">Data management</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('data_clear') }}" onsubmit="return confirm('Clear all analysis runs? This cannot be undone.');">
+          <p class="mb-2 text-muted">Remove all saved analysis runs and their images.</p>
+          <button type="submit" class="btn btn-outline-danger">Clear all runs</button>
         </form>
       </div>
     </div>
