@@ -5,31 +5,21 @@
     <div class="card-body">
       <h5 class="card-title mb-3">Run Analysis</h5>
       <form method="post" action="{{ url_for('analysis_preview') }}" enctype="multipart/form-data" class="row g-3" id="analysis-form">
-        <input type="hidden" name="captured_data" id="captured_data">
         <div class="col-12 col-lg-4">
           <label class="form-label">Upload image</label>
           <input type="file" class="form-control" name="image" accept="image/*" capture="environment">
           <div class="form-text">Choose a photo (mobile will prompt camera by default).</div>
         </div>
         <div class="col-12 col-lg-8">
-          <div class="border rounded p-2">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <div class="fw-semibold">Or capture from camera</div>
-              <div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="startCamBtn">Start camera</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="stopCamBtn" disabled>Stop</button>
-                <button type="button" class="btn btn-sm btn-primary" id="captureBtn" disabled>Capture</button>
-              </div>
+          <div class="border rounded p-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="fw-semibold">Or capture using your camera</div>
+              <a href="{{ url_for('camera') }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-camera"></i>
+                <span class="ms-1">Open camera</span>
+              </a>
             </div>
-            <div class="row g-2">
-              <div class="col-12 col-md-6">
-                <video id="video" playsinline class="w-100 rounded border" style="max-height: 240px; background: #000;"></video>
-              </div>
-              <div class="col-12 col-md-6">
-                <canvas id="canvas" class="w-100 rounded border" style="max-height: 240px;"></canvas>
-              </div>
-            </div>
-            <div class="form-text">Click Capture to freeze a frame. Submitting will use the captured image if present.</div>
+            <div class="form-text mt-2">Open the dedicated camera page to capture a photo, then you'll return here for analysis.</div>
           </div>
         </div>
         <div class="col-12">
@@ -251,54 +241,6 @@
     })();
   </script>
   <script>
-    (function() {
-      const startBtn = document.getElementById('startCamBtn');
-      const stopBtn = document.getElementById('stopCamBtn');
-      const captureBtn = document.getElementById('captureBtn');
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const hiddenInput = document.getElementById('captured_data');
-      let stream = null;
-
-      async function startCamera() {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-          video.srcObject = stream;
-          await video.play();
-          startBtn.disabled = true;
-          stopBtn.disabled = false;
-          captureBtn.disabled = false;
-        } catch (e) {
-          alert('Camera access failed. Please allow camera permissions or use Upload.');
-        }
-      }
-      function stopCamera() {
-        if (stream) {
-          stream.getTracks().forEach(t => t.stop());
-          stream = null;
-        }
-        video.pause();
-        video.srcObject = null;
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        captureBtn.disabled = true;
-      }
-      function captureFrame() {
-        const w = video.videoWidth || 640;
-        const h = video.videoHeight || 480;
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/png');
-        hiddenInput.value = dataUrl;
-      }
-      startBtn?.addEventListener('click', startCamera);
-      stopBtn?.addEventListener('click', stopCamera);
-      captureBtn?.addEventListener('click', captureFrame);
-      window.addEventListener('beforeunload', stopCamera);
-    })();
+    (function() {})();
   </script>
 {% endblock %}
-
-

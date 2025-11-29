@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Camera - PestiGuard{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Capture Photo</h5>
+      <form method="post" action="{{ url_for('analysis_preview') }}" id="camera-form">
+        <input type="hidden" name="captured_data" id="captured_data">
+        <div class="border rounded p-2 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="fw-semibold">Device camera</div>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="startCamBtn">Start</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="stopCamBtn" disabled>Stop</button>
+              <button type="button" class="btn btn-sm btn-primary" id="captureBtn" disabled>Capture</button>
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-12 col-md-6">
+              <video id="video" playsinline class="w-100 rounded border" style="max-height: 300px; background: #000;"></video>
+            </div>
+            <div class="col-12 col-md-6">
+              <canvas id="canvas" class="w-100 rounded border" style="max-height: 300px;"></canvas>
+            </div>
+          </div>
+          <div class="form-text mt-2">Click Capture to freeze a frame. Then click "Use photo" to analyze.</div>
+        </div>
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{{ url_for('analysis') }}" class="btn btn-outline-secondary">Back to Analysis</a>
+          <button type="submit" class="btn btn-primary" id="usePhotoBtn" disabled>Use photo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    (function() {
+      const startBtn = document.getElementById('startCamBtn');
+      const stopBtn = document.getElementById('stopCamBtn');
+      const captureBtn = document.getElementById('captureBtn');
+      const usePhotoBtn = document.getElementById('usePhotoBtn');
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const hiddenInput = document.getElementById('captured_data');
+      let stream = null;
+
+      async function startCamera() {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+          video.srcObject = stream;
+          await video.play();
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+          captureBtn.disabled = false;
+        } catch (e) {
+          alert('Camera access failed. Please allow camera permissions.');
+        }
+      }
+      function stopCamera() {
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+          stream = null;
+        }
+        video.pause();
+        video.srcObject = null;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        captureBtn.disabled = true;
+      }
+      function captureFrame() {
+        const w = video.videoWidth || 640;
+        const h = video.videoHeight || 480;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/png');
+        hiddenInput.value = dataUrl;
+        usePhotoBtn.disabled = !dataUrl;
+      }
+      startBtn?.addEventListener('click', startCamera);
+      stopBtn?.addEventListener('click', stopCamera);
+      captureBtn?.addEventListener('click', captureFrame);
+      window.addEventListener('beforeunload', stopCamera);
+    })();
+  </script>
+{% endblock %}
+
+

@@ -577,6 +577,11 @@ def analysis():
     """Renders the analysis page."""
     return render_template('analysis.html', title="Analysis")
 
+@app.route('/camera')
+def camera():
+    """Dedicated camera capture page."""
+    return render_template('camera.html', title="Camera")
+
 @app.route('/analysis', methods=['POST'])
 def analysis_run():
     """Handle image upload and compute results with auto-placed points."""
