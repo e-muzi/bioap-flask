@@ -83,28 +83,32 @@
     {{ bootstrap.load_js() }}
     <script>
       (function(){
-        var btn = document.getElementById('themeToggle');
-        if (!btn) return;
-        function setIcon(isDark) {
-          var i = btn.querySelector('i');
-          if (!i) return;
-          i.classList.toggle('bi-moon-stars', !isDark);
-          i.classList.toggle('bi-sun-fill', isDark);
+        var btns = Array.prototype.slice.call(document.querySelectorAll('.js-theme-toggle'));
+        if (btns.length === 0) return;
+        function setIcons(isDark) {
+          btns.forEach(function(b){
+            var i = b.querySelector('i');
+            if (!i) return;
+            i.classList.toggle('bi-moon-stars', !isDark);
+            i.classList.toggle('bi-sun-fill', isDark);
+          });
         }
         function currentIsDark() {
           return document.documentElement.getAttribute('data-theme') === 'dark';
         }
-        setIcon(currentIsDark());
-        btn.addEventListener('click', function(){
-          var isDark = currentIsDark();
-          if (isDark) {
-            document.documentElement.removeAttribute('data-theme');
-            try { localStorage.setItem('pg-theme', 'light'); } catch(e) {}
-          } else {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            try { localStorage.setItem('pg-theme', 'dark'); } catch(e) {}
-          }
-          setIcon(!isDark);
+        setIcons(currentIsDark());
+        btns.forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var isDark = currentIsDark();
+            if (isDark) {
+              document.documentElement.removeAttribute('data-theme');
+              try { localStorage.setItem('pg-theme', 'light'); } catch(e) {}
+            } else {
+              document.documentElement.setAttribute('data-theme', 'dark');
+              try { localStorage.setItem('pg-theme', 'dark'); } catch(e) {}
+            }
+            setIcons(!isDark);
+          });
         });
       })();
     </script>

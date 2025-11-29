@@ -327,13 +327,8 @@ def seed_defaults():
     db.session.commit()
 @app.route('/')
 def index():
-    """Renders the main dashboard/index page."""
-    # Sample data for the dashboard
-    dashboard_data = {
-        'active_analyses': 2,
-        'recent_alerts': 0
-    }
-    return render_template('index.html', title="Dashboard", data=dashboard_data)
+    """Redirect root to Analysis page (Dashboard removed)."""
+    return redirect(url_for('analysis'))
 
 @app.route('/history')
 def history():
@@ -353,7 +348,7 @@ def history():
             "profile": r.profile.name if r.profile else "",
             "image_path": r.image_path
         })
-    return render_template('history.html', title="Analysis History", history=items, q=q)
+    return render_template('history.html', title="History", history=items, q=q)
 
 @app.route('/history/<int:run_id>')
 def history_detail(run_id: int):

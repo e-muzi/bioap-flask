@@ -1,7 +1,7 @@
 {% macro render_navbar(page_title) %}
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style="border-bottom: 1px solid var(--bs-border-color);">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">
+    <a class="navbar-brand" href="{{ url_for('analysis') }}">
       <img src="{{ url_for('public_files', filename='BioAP_Logo.PNG') }}" alt="PestiGuard" style="height:28px;" class="me-2 align-text-bottom">
       PestiGuard Analysis
     </a>
@@ -9,15 +9,15 @@
     <span class="navbar-text fs-5 fw-bold">
       {{ page_title }}
     </span>
+    <!-- Mobile theme toggle next to title -->
+    <div class="d-flex d-lg-none ms-auto">
+      <button class="btn btn-sm btn-outline-secondary d-flex align-items-center js-theme-toggle" aria-label="Toggle theme">
+        <i class="bi bi-moon-stars"></i>
+      </button>
+    </div>
 
     <div class="d-none d-lg-flex ms-auto">
       <ul class="navbar-nav flex-row align-items-center">
-        <li class="nav-item px-2">
-          <a class="nav-link text-secondary" href="{{ url_for('index') }}">
-            <i class="bi bi-bar-chart-line-fill"></i>
-            <span class="ms-1">Dashboard</span>
-          </a>
-        </li>
         <li class="nav-item px-2">
           <a class="nav-link text-secondary" href="{{ url_for('analysis') }}">
             <i class="bi bi-camera"></i>
@@ -49,7 +49,7 @@
           </a>
         </li>
         <li class="nav-item px-2">
-          <button id="themeToggle" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center js-theme-toggle">
             <i class="bi bi-moon-stars"></i>
             <span class="ms-1 d-none d-xl-inline">Theme</span>
           </button>
@@ -58,12 +58,6 @@
     </div>
     <div class="fixed-bottom d-lg-none bg-white shadow-lg" style="border-top: 1px solid var(--bs-border-color);">
       <div class="d-flex justify-content-around p-2">
-        <a href="{{ url_for('index') }}" class="btn btn-link text-secondary text-decoration-none">
-          <div class="d-flex flex-column align-items-center">
-            <i class="bi bi-bar-chart-line-fill fs-3"></i>
-            <small>Dashboard</small>
-          </div>
-        </a>
         <a href="{{ url_for('analysis') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-camera fs-3"></i>
@@ -94,12 +88,6 @@
             <small>About</small>
           </div>
         </a>
-        <button id="themeToggle" class="btn btn-link text-secondary text-decoration-none">
-          <div class="d-flex flex-column align-items-center">
-            <i class="bi bi-moon-stars fs-3"></i>
-            <small>Theme</small>
-          </div>
-        </button>
       </div>
     </div>
 

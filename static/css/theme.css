@@ -75,6 +75,9 @@
 [data-theme="dark"] .text-secondary:not(.nav-link) {
   color: var(--bs-secondary) !important;
 }
+[data-theme="dark"] .form-text {
+  color: #C8D2CC !important;
+}
 [data-theme="dark"] .btn-outline-secondary {
   color: var(--bs-secondary);
   border-color: var(--bs-secondary);
@@ -125,6 +128,26 @@
 [data-theme="dark"] .border,
 [data-theme="dark"] [style*="border-top: 1px solid #dee2e6"] {
   border-color: var(--bs-border-color) !important;
+}
+
+/* Improve visibility of bottom nav toggle (button link) */
+[data-theme="dark"] .btn-link.text-secondary,
+[data-theme="dark"] .btn-link.text-secondary small,
+[data-theme="dark"] .btn-link.text-secondary i {
+  color: var(--bs-body-color) !important;
+}
+
+/* Page bottom spacing for better scroll feel and to clear fixed mobile nav */
+:root {
+  --pg-bottom-space: 4rem;
+}
+main.container {
+  padding-bottom: var(--pg-bottom-space);
+}
+@media (max-width: 992px) {
+  main.container {
+    padding-bottom: calc(var(--pg-bottom-space) + 4.5rem);
+  }
 }
 
 /* Card and table subtle polish to match agricultural look */
