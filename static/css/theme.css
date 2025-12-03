@@ -1,25 +1,6 @@
-/* PestiGuard BioAP theme - light and dark palettes */
+/* BioAP theme - augment Bootswatch (light) + custom dark palette */
 :root {
-  /* Brand and semantic colors */
-  --bs-primary: #2F7D32;
-  --bs-primary-rgb: 47, 125, 50;
-  --bs-success: #6DBF4B;
-  --bs-success-rgb: 109, 191, 75;
-  --bs-secondary: #6B7A6F;
-  --bs-secondary-rgb: 107, 122, 111;
-  --bs-info: #4E9F8A;
-  --bs-info-rgb: 78, 159, 138;
-  --bs-warning: #E1A700;
-  --bs-warning-rgb: 225, 167, 0;
-  --bs-danger: #B03A2E;
-  --bs-danger-rgb: 176, 58, 46;
-
-  /* Surfaces and text */
-  --bs-body-bg: #F6F7F2;
-  --bs-body-color: #2B2B2B;
-  --bs-border-color: #D7DCCF;
-
-  /* Custom surfaces */
+  /* Custom surfaces for cards/nav (keep light Bootswatch palette for core colors) */
   --ag-surface: #FFFFFF;
   --ag-surface-subtle: #FAFAF7;
   --ag-navbar-bg: #FFFFFF;
