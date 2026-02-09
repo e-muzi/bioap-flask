@@ -39,6 +39,9 @@
                         {% endif %}
                       </td>
                       <td class="text-end">
+                        {% if profile_case_counts.get(p.id, 0) == 0 %}
+                          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profile_setup', profile_id=p.id) }}">Setup</a>
+                        {% endif %}
                         <a class="btn btn-sm btn-outline-primary" href="{{ url_for('profiles_export', profile_id=p.id) }}">Export</a>
                         {% if not p.is_active %}
                           <form method="post" action="{{ url_for('profiles_activate', profile_id=p.id) }}" class="d-inline">
@@ -106,15 +109,18 @@
       <div class="card mb-3">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0">{{ pest.display_name }}</h6>
-            <span class="badge bg-secondary">{{ pest.key }}</span>
+            <div>
+              <h6 class="mb-0">{{ pest.display_name }}</h6>
+              <span class="badge bg-secondary">{{ pest.key }}</span>
+            </div>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('calibration_case_edit', profile_id=profile.id, pesticide_id=pest.id) }}">Edit case</a>
           </div>
           <div class="table-responsive">
             <table class="table table-sm align-middle">
               <thead>
                 <tr>
                   <th style="width: 160px;">Concentration</th>
-                  <th style="width: 160px;">RGB total</th>
+                  <th style="width: 160px;">RGB total (R+G+B)</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,6 +141,7 @@
               </tbody>
             </table>
           </div>
+          <div class="form-text">Each row is one data point; RGB total is the sum R+G+B for that point.</div>
           <div class="row g-3 align-items-center">
             <div class="col-12 col-lg-8">
               <canvas id="chart-{{ pest.id }}" height="120"></canvas>
@@ -199,7 +206,12 @@
     </div>
   </form>
   {% else %}
-    <div class="alert alert-info">No pesticides found in the active profile.</div>
+    <div class="alert alert-info">
+      No cases found in the active profile.
+      {% if profile and profile_case_counts.get(profile.id, 0) == 0 %}
+        <a href="{{ url_for('profile_setup', profile_id=profile.id) }}">Complete setup</a> to set the number of cases and concentrations.
+      {% endif %}
+    </div>
   {% endif %}
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script type="application/json" id="pesticides-data">

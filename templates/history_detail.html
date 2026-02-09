@@ -17,7 +17,22 @@
           <div class="text-muted small mb-3">
             {{ run.created_at.strftime('%Y-%m-%d %H:%M') }} • Mode: {{ run.mode }} • Profile: {{ run.profile.name if run.profile else '' }}
           </div>
+          {% if scientific_mode and img_width and img_height %}
+          <div class="position-relative d-inline-block" id="history-detail-markers">
+            <img src="/{{ run.image_path }}" class="img-fluid rounded border" alt="run image" style="max-width: 100%;">
+            {% for r in results %}
+              {% set left_pct = (r.x / img_width * 100.0) %}
+              {% set top_pct = (r.y / img_height * 100.0) %}
+              {% set dot_colors = ['var(--bs-primary)', 'var(--bs-success)', 'var(--bs-info)', 'var(--bs-warning)', 'var(--bs-danger)'] %}
+              {% set dot_color = dot_colors[loop.index0 % 5] %}
+              <div class="position-absolute translate-middle" data-left-pct="{{ '%.2f'|format(left_pct) }}" data-top-pct="{{ '%.2f'|format(top_pct) }}" data-dot-color="{{ dot_color }}">
+                <span class="d-inline-block rounded-circle analysis-dot" style="width: 14px; height: 14px; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.2);"></span>
+              </div>
+            {% endfor %}
+          </div>
+          {% else %}
           <img src="/{{ run.image_path }}" class="img-fluid rounded border" alt="run image">
+          {% endif %}
         </div>
       </div>
     </div>
@@ -33,8 +48,41 @@
       </div>
       <div class="card mt-3">
         <div class="card-body">
-          <h6 class="mb-3">Results</h6>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Results</h6>
+            {% if not scientific_mode %}
+            <a href="{{ url_for('import_to_calibration', run_id=run.id) }}" class="btn btn-sm btn-outline-primary">Import to calibration</a>
+            {% endif %}
+          </div>
           <div class="table-responsive">
+            {% if scientific_mode %}
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Point</th>
+                  <th>RGB</th>
+                  <th>HEX</th>
+                  <th>HSV</th>
+                  <th>HSL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in results %}
+                <tr>
+                  <td>{{ r.pesticide_key|replace('point_', 'Point ') }}</td>
+                  {% if r.scientific_data %}
+                  <td>{{ r.scientific_data.rgb[0] }}, {{ r.scientific_data.rgb[1] }}, {{ r.scientific_data.rgb[2] }}</td>
+                  <td><code class="small">{{ r.scientific_data.hex }}</code></td>
+                  <td class="small">{{ r.scientific_data.hsv }}</td>
+                  <td class="small">{{ r.scientific_data.hsl }}</td>
+                  {% else %}
+                  <td colspan="4" class="text-muted">—</td>
+                  {% endif %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
             <table class="table table-sm align-middle mb-0">
               <thead>
                 <tr>
@@ -55,11 +103,29 @@
                 {% endfor %}
               </tbody>
             </table>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
   </div>
+  <script>
+    (function() {
+      document.querySelectorAll('#history-detail-markers [data-left-pct][data-top-pct]').forEach(function(el){
+        const lp = parseFloat(el.getAttribute('data-left-pct'));
+        const tp = parseFloat(el.getAttribute('data-top-pct'));
+        if (!Number.isNaN(lp) && !Number.isNaN(tp)) {
+          el.style.left = lp.toFixed(2) + '%';
+          el.style.top = tp.toFixed(2) + '%';
+        }
+        const dotColor = el.getAttribute('data-dot-color');
+        if (dotColor) {
+          const dot = el.querySelector('.analysis-dot');
+          if (dot) dot.style.background = dotColor;
+        }
+      });
+    })();
+  </script>
 {% endblock %}
 
 

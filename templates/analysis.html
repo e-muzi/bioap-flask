@@ -38,7 +38,7 @@
             <div class="form-text mt-2">Open the dedicated camera page to capture a photo, then you'll return here for analysis.</div>
           </div>
         </div>
-        <div class="col-12">
+        <div class="col-12 {% if scientific_mode %}d-none{% endif %}">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" name="normalize" id="normalize">
             <label class="form-check-label" for="normalize">
@@ -64,11 +64,23 @@
             {% for r in results %}
               {% set left_pct = (r.x / width * 100.0) %}
               {% set top_pct = (r.y / height * 100.0) %}
-              <div class="position-absolute translate-middle"
-                   data-left-pct="{{ '%.2f'|format(left_pct) }}"
-                   data-top-pct="{{ '%.2f'|format(top_pct) }}">
-                <span class="d-inline-block rounded-circle" style="width: 14px; height: 14px; background: var(--bs-primary); border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), .5);"></span>
-              </div>
+              {% if scientific_mode %}
+                {% set dot_colors = ['var(--bs-primary)', 'var(--bs-success)', 'var(--bs-info)', 'var(--bs-warning)', 'var(--bs-danger)'] %}
+                {% set dot_color = dot_colors[loop.index0 % 5] %}
+                <div class="position-absolute translate-middle"
+                     data-left-pct="{{ '%.2f'|format(left_pct) }}"
+                     data-top-pct="{{ '%.2f'|format(top_pct) }}"
+                     data-dot-color="{{ dot_color }}">
+                  <span class="d-inline-block rounded-circle analysis-dot" style="width: 14px; height: 14px; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.2);"></span>
+                </div>
+              {% else %}
+                <div class="position-absolute translate-middle"
+                     data-left-pct="{{ '%.2f'|format(left_pct) }}"
+                     data-top-pct="{{ '%.2f'|format(top_pct) }}"
+                     data-dot-color="var(--bs-primary)">
+                  <span class="d-inline-block rounded-circle analysis-dot" style="width: 14px; height: 14px; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), .5);"></span>
+                </div>
+              {% endif %}
             {% endfor %}
           </div>
           <div class="small text-muted mt-2">Markers show the N sampling points used (center + 4 neighbors per point).</div>
@@ -78,8 +90,37 @@
     <div class="col-12 col-lg-6">
       <div class="card">
         <div class="card-body">
-          <h6 class="mb-3">Results</h6>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Results</h6>
+            {% if run_id %}
+            <a href="{{ url_for('import_to_calibration', run_id=run_id) }}" class="btn btn-sm btn-outline-primary">Import to calibration</a>
+            {% endif %}
+          </div>
           <div class="table-responsive">
+            {% if scientific_mode %}
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Point</th>
+                  <th>RGB</th>
+                  <th>HEX</th>
+                  <th>HSV</th>
+                  <th>HSL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in results %}
+                <tr>
+                  <td>{{ r.pesticide_name }}</td>
+                  <td>{{ r.scientific_data.rgb[0] }}, {{ r.scientific_data.rgb[1] }}, {{ r.scientific_data.rgb[2] }}</td>
+                  <td><code class="small">{{ r.scientific_data.hex }}</code></td>
+                  <td class="small">{{ r.scientific_data.hsv }}</td>
+                  <td class="small">{{ r.scientific_data.hsl }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
             <table class="table table-sm align-middle">
               <thead>
                 <tr>
@@ -103,6 +144,7 @@
                 {% endfor %}
               </tbody>
             </table>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -118,18 +160,31 @@
         {% for p in points %}
           {% set left_pct = (p.x / width * 100.0) %}
           {% set top_pct = (p.y / height * 100.0) %}
-          <div class="drag-point position-absolute translate-middle"
-               data-index="{{ loop.index0 }}"
-               data-left-pct="{{ '%.2f'|format(left_pct) }}"
-               data-top-pct="{{ '%.2f'|format(top_pct) }}">
-            <span class="d-inline-block rounded-circle" style="width: 16px; height: 16px; background: var(--bs-danger); border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(var(--bs-danger-rgb), .5); cursor: grab;"></span>
-          </div>
+          {% if scientific_mode %}
+            {% set dot_colors = ['var(--bs-primary)', 'var(--bs-success)', 'var(--bs-info)', 'var(--bs-warning)', 'var(--bs-danger)'] %}
+            {% set dot_color = dot_colors[loop.index0 % 5] %}
+            <div class="drag-point position-absolute translate-middle"
+                 data-index="{{ loop.index0 }}"
+                 data-left-pct="{{ '%.2f'|format(left_pct) }}"
+                 data-top-pct="{{ '%.2f'|format(top_pct) }}"
+                 data-dot-color="{{ dot_color }}">
+              <span class="d-inline-block rounded-circle analysis-dot" style="width: 16px; height: 16px; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.2); cursor: grab;"></span>
+            </div>
+          {% else %}
+            <div class="drag-point position-absolute translate-middle"
+                 data-index="{{ loop.index0 }}"
+                 data-left-pct="{{ '%.2f'|format(left_pct) }}"
+                 data-top-pct="{{ '%.2f'|format(top_pct) }}"
+                 data-dot-color="var(--bs-danger)">
+              <span class="d-inline-block rounded-circle analysis-dot" style="width: 16px; height: 16px; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(var(--bs-danger-rgb), .5); cursor: grab;"></span>
+            </div>
+          {% endif %}
         {% endfor %}
       </div>
       <form method="post" action="{{ url_for('analysis_compute') }}" class="mt-3 d-flex flex-wrap gap-2" id="compute-form">
         <input type="hidden" name="points_json" id="points_json">
         <input type="hidden" name="image_path" value="{{ image_path }}">
-        <div class="form-check">
+        <div class="form-check {% if scientific_mode %}d-none{% endif %}">
           <input class="form-check-input" type="checkbox" name="normalize" id="normalize2">
           <label class="form-check-label" for="normalize2">
             Use background normalization (auto from corner)
@@ -149,13 +204,18 @@
       const dots = Array.from(container.querySelectorAll('.drag-point'));
       const W = parseInt(img.getAttribute('data-img-width'), 10) || (img.naturalWidth || 0);
       const H = parseInt(img.getAttribute('data-img-height'), 10) || (img.naturalHeight || 0);
-      // Initialize positions for any elements with data-left-pct/top-pct
+      // Initialize positions and dot colors for any elements with data-left-pct/top-pct
       document.querySelectorAll('[data-left-pct][data-top-pct]').forEach(function(el){
         const lp = parseFloat(el.getAttribute('data-left-pct'));
         const tp = parseFloat(el.getAttribute('data-top-pct'));
         if (!Number.isNaN(lp) && !Number.isNaN(tp)) {
           el.style.left = lp.toFixed(2) + '%';
           el.style.top = tp.toFixed(2) + '%';
+        }
+        const dotColor = el.getAttribute('data-dot-color');
+        if (dotColor) {
+          const dot = el.classList.contains('analysis-dot') ? el : el.querySelector('.analysis-dot');
+          if (dot) dot.style.background = dotColor;
         }
       });
       let points = dots.map(dot => {
@@ -245,13 +305,18 @@
   {% endif %}
   <script>
     (function() {
-      // Apply left/top styles for any elements that carry percentage data attributes
+      // Apply left/top and dot color for any elements that carry data attributes
       document.querySelectorAll('[data-left-pct][data-top-pct]').forEach(function(el){
         const lp = parseFloat(el.getAttribute('data-left-pct'));
         const tp = parseFloat(el.getAttribute('data-top-pct'));
         if (!Number.isNaN(lp) && !Number.isNaN(tp)) {
           el.style.left = lp.toFixed(2) + '%';
           el.style.top = tp.toFixed(2) + '%';
+        }
+        const dotColor = el.getAttribute('data-dot-color');
+        if (dotColor) {
+          const dot = el.classList.contains('analysis-dot') ? el : el.querySelector('.analysis-dot');
+          if (dot) dot.style.background = dotColor;
         }
       });
     })();

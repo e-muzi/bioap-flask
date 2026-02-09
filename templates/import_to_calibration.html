@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Import to calibration - BioAP{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title mb-2">Import run results to calibration</h5>
+      <p class="text-muted small mb-3">Run: <strong>{{ run.name }}</strong>. Choose a profile and, for each result, the target case and concentration to add as a new calibration point.</p>
+      <form method="post" action="{{ url_for('import_to_calibration', run_id=run.id) }}">
+        <div class="mb-3">
+          <label class="form-label">Target profile</label>
+          <select name="profile_id" id="profile_id" class="form-select" required>
+            <option value="">— Select profile —</option>
+            {% for p in all_profiles %}
+            <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Result</th>
+                <th class="text-end">RGB total</th>
+                <th>Target case</th>
+                <th style="width: 140px;">Concentration</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in results %}
+              <tr>
+                <td>{{ r.pesticide_name }}</td>
+                <td class="text-end">{{ r.rgb_sum }}</td>
+                <td>
+                  <select name="target_pesticide_id-{{ r.index }}" class="form-select form-select-sm target-case-select" data-index="{{ r.index }}">
+                    <option value="">— Select profile first —</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="number" step="0.01" name="concentration-{{ r.index }}" class="form-control form-control-sm" placeholder="0.00">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn btn-primary">Import to calibration</button>
+          <a href="{{ url_for('history_detail', run_id=run.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script type="application/json" id="profile-pesticides-data">{{ profile_pesticides|tojson }}</script>
+  <script>
+    (function() {
+      var profileSelect = document.getElementById('profile_id');
+      var targetSelects = document.querySelectorAll('.target-case-select');
+      var profilePesticides = {};
+      try {
+        var raw = document.getElementById('profile-pesticides-data');
+        if (raw && raw.textContent) profilePesticides = JSON.parse(raw.textContent);
+      } catch (e) {}
+
+      function updateTargetCaseDropdowns() {
+        var profileId = profileSelect.value;
+        var pesticides = profilePesticides[profileId] || [];
+        targetSelects.forEach(function(sel) {
+          sel.innerHTML = '<option value="">— Select case —</option>';
+          pesticides.forEach(function(p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.display_name;
+            sel.appendChild(opt);
+          });
+        });
+      }
+
+      profileSelect.addEventListener('change', updateTargetCaseDropdowns);
+    })();
+  </script>
+{% endblock %}

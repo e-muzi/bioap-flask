@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import json
 import uuid
+import colorsys
 from PIL import Image
 import numpy as np
 import base64
@@ -46,7 +47,7 @@ def set_app_setting(key, value):
 
 def get_app_mode():
     mode = get_app_setting('mode', 'default')
-    if mode not in ('default', 'customize'):
+    if mode not in ('default', 'customize', 'scientific'):
         mode = 'default'
     return mode
 
@@ -139,6 +140,7 @@ class RunResult(db.Model):
     rgb_sum = db.Column(db.Integer, nullable=False)
     concentration = db.Column(db.Float, nullable=False)
     level = db.Column(db.String(20), nullable=False)  # 'Low' | 'Medium' | 'High' | 'Out of range'
+    scientific_data = db.Column(db.Text, nullable=True)  # JSON: {rgb, hex, hsv, hsl} for scientific mode
     run = db.relationship('Run', backref=db.backref('results', lazy=True, cascade="all, delete-orphan"))
 
 
@@ -193,6 +195,47 @@ def sample_five_pixel_total(image: Image.Image, x: int, y: int, bg_offsets=None)
     arr = np.array(pixels, dtype=np.float32)
     mean_rgb = arr.mean(axis=0)
     return int(round(float(mean_rgb.sum())))
+
+def sample_five_pixel_mean_rgb(image: Image.Image, x: int, y: int):
+    """Sample center + 4-neighbors; return (r, g, b) as ints 0-255 (no background subtraction)."""
+    img = image.convert('RGB')
+    width, height = img.size
+    coords = [(x, y), (x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+    pixels = []
+    for px, py in coords:
+        if 0 <= px < width and 0 <= py < height:
+            pixels.append(img.getpixel((px, py)))
+    if not pixels:
+        return (0, 0, 0)
+    arr = np.array(pixels, dtype=np.float32)
+    mean_rgb = arr.mean(axis=0)
+    return (int(round(mean_rgb[0])), int(round(mean_rgb[1])), int(round(mean_rgb[2])))
+
+def rgb_to_hex(r, g, b):
+    return "#{:02x}{:02x}{:02x}".format(
+        max(0, min(255, int(r))),
+        max(0, min(255, int(g))),
+        max(0, min(255, int(b)))
+    )
+
+def rgb_to_hsv_str(r, g, b):
+    r, g, b = r/255.0, g/255.0, b/255.0
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    return "{:.0f}°, {:.0f}%, {:.0f}%".format(h * 360, s * 100, v * 100)
+
+def rgb_to_hsl_str(r, g, b):
+    r, g, b = r/255.0, g/255.0, b/255.0
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    return "{:.0f}°, {:.0f}%, {:.0f}%".format(h * 360, s * 100, l * 100)
+
+def scientific_color_data(r, g, b):
+    """Return dict with rgb, hex, hsv, hsl for scientific mode display."""
+    return {
+        "rgb": [r, g, b],
+        "hex": rgb_to_hex(r, g, b),
+        "hsv": rgb_to_hsv_str(r, g, b),
+        "hsl": rgb_to_hsl_str(r, g, b),
+    }
 
 def interpolate_concentration(points, rgb_sum_value):
     """points: list of {'concentration': float, 'rgb_sum': int}."""
@@ -356,15 +399,33 @@ def history_detail(run_id: int):
     run = Run.query.get_or_404(run_id)
     results = []
     for rr in run.results:
-        results.append({
+        item = {
             "pesticide_key": rr.pesticide_key,
             "x": rr.pixel_x,
             "y": rr.pixel_y,
             "rgb_sum": rr.rgb_sum,
             "concentration": round(rr.concentration, 2),
             "level": rr.level
-        })
-    return render_template('history_detail.html', title=run.name, run=run, results=results)
+        }
+        if rr.scientific_data:
+            try:
+                item["scientific_data"] = json.loads(rr.scientific_data)
+            except Exception:
+                item["scientific_data"] = None
+        else:
+            item["scientific_data"] = None
+        results.append(item)
+    scientific_mode = (run.mode == 'scientific')
+    img_width = img_height = None
+    if scientific_mode and results and run.image_path:
+        try:
+            path = run.image_path if os.path.isabs(run.image_path) else os.path.join('.', run.image_path)
+            if os.path.exists(path):
+                with Image.open(path) as im:
+                    img_width, img_height = im.size
+        except Exception:
+            pass
+    return render_template('history_detail.html', title=run.name, run=run, results=results, scientific_mode=scientific_mode, img_width=img_width, img_height=img_height)
 
 @app.route('/history/<int:run_id>/rename', methods=['POST'])
 def history_rename(run_id: int):
@@ -394,6 +455,21 @@ def history_delete(run_id: int):
 @app.route('/history/<int:run_id>/export')
 def history_export(run_id: int):
     run = Run.query.get_or_404(run_id)
+    export_results = []
+    for rr in run.results:
+        r = {
+            "pesticide_key": rr.pesticide_key,
+            "pixel": {"x": rr.pixel_x, "y": rr.pixel_y},
+            "rgb_sum": rr.rgb_sum,
+            "concentration": float(rr.concentration),
+            "level": rr.level
+        }
+        if rr.scientific_data:
+            try:
+                r["scientific_data"] = json.loads(rr.scientific_data)
+            except Exception:
+                pass
+        export_results.append(r)
     payload = {
         "version": 1,
         "run": {
@@ -408,16 +484,79 @@ def history_export(run_id: int):
                 "background_point": {"x": run.background_point_x, "y": run.background_point_y}
             },
             "sampling_scheme": run.sampling_scheme,
-            "results": [{
-                "pesticide_key": rr.pesticide_key,
-                "pixel": {"x": rr.pixel_x, "y": rr.pixel_y},
-                "rgb_sum": rr.rgb_sum,
-                "concentration": float(rr.concentration),
-                "level": rr.level
-            } for rr in run.results]
+            "results": export_results
         }
     }
     return jsonify(payload)
+
+@app.route('/history/<int:run_id>/import-to-calibration', methods=['GET', 'POST'])
+def import_to_calibration(run_id: int):
+    """Import run's RGB totals into a calibration profile: choose profile and concentration per result. Supports both calibration and scientific runs."""
+    run = Run.query.get_or_404(run_id)
+    results = []
+    if run.mode == 'scientific':
+        for rr in run.results:
+            name = rr.pesticide_key.replace('point_', 'Point ') if rr.pesticide_key.startswith('point_') else rr.pesticide_key
+            results.append({
+                "index": len(results),
+                "pesticide_key": rr.pesticide_key,
+                "pesticide_name": name,
+                "rgb_sum": rr.rgb_sum,
+            })
+    else:
+        key_to_name = {}
+        if run.profile_id:
+            for p in Pesticide.query.filter_by(profile_id=run.profile_id).all():
+                key_to_name[p.key] = p.display_name
+        for rr in run.results:
+            results.append({
+                "index": len(results),
+                "pesticide_key": rr.pesticide_key,
+                "pesticide_name": key_to_name.get(rr.pesticide_key, rr.pesticide_key),
+                "rgb_sum": rr.rgb_sum,
+            })
+    if not results:
+        flash('This run has no results to import.', 'warning')
+        return redirect(url_for('history_detail', run_id=run_id))
+    all_profiles = CalibrationProfile.query.order_by(CalibrationProfile.created_at.asc()).all()
+    profile_pesticides = {}
+    for prof in all_profiles:
+        profile_pesticides[prof.id] = [
+            {"id": p.id, "key": p.key, "display_name": p.display_name}
+            for p in Pesticide.query.filter_by(profile_id=prof.id).order_by(Pesticide.order_index.asc()).all()
+        ]
+    if request.method == 'POST':
+        profile_id = request.form.get('profile_id', type=int)
+        if not profile_id or not any(p.id == profile_id for p in all_profiles):
+            flash('Please select a valid profile.', 'danger')
+            return render_template('import_to_calibration.html', title="Import to calibration", run=run, results=results, all_profiles=all_profiles, profile_pesticides=profile_pesticides)
+        added = 0
+        for res in results:
+            idx = res["index"]
+            target_pesticide_id = request.form.get(f'target_pesticide_id-{idx}', type=int)
+            concentration = request.form.get(f'concentration-{idx}', type=float)
+            if target_pesticide_id is None or concentration is None:
+                continue
+            pest = Pesticide.query.filter_by(id=target_pesticide_id, profile_id=profile_id).first()
+            if not pest:
+                continue
+            rgb_sum = res["rgb_sum"]
+            max_seq = db.session.query(db.func.max(CalibrationPoint.seq_index)).filter_by(pesticide_id=pest.id).scalar()
+            next_seq = (max_seq or 0) + 1
+            db.session.add(CalibrationPoint(
+                pesticide_id=pest.id,
+                seq_index=next_seq,
+                concentration=float(concentration),
+                rgb_sum=int(rgb_sum),
+            ))
+            added += 1
+        if added:
+            db.session.commit()
+            flash(f'Imported {added} point(s) into calibration. Review and save on the Calibration page.', 'success')
+        else:
+            flash('No valid entries to import. Select a profile and target case with concentration for each row.', 'warning')
+        return redirect(url_for('calibration'))
+    return render_template('import_to_calibration.html', title="Import to calibration", run=run, results=results, all_profiles=all_profiles, profile_pesticides=profile_pesticides)
 
 @app.route('/profiles/create', methods=['POST'])
 def profiles_create():
@@ -431,8 +570,8 @@ def profiles_create():
     prof = CalibrationProfile(name=name, is_active=False)
     db.session.add(prof)
     db.session.commit()
-    flash('Profile created.', 'success')
-    return redirect(url_for('calibration'))
+    flash('Profile created. Set number of cases and concentrations below.', 'success')
+    return redirect(url_for('profile_setup', profile_id=prof.id))
 
 @app.route('/profiles/activate/<int:profile_id>', methods=['POST'])
 def profiles_activate(profile_id: int):
@@ -478,6 +617,117 @@ def profiles_delete(profile_id: int):
     db.session.commit()
     flash('Profile deleted.', 'success')
     return redirect(url_for('calibration'))
+
+
+@app.route('/profiles/<int:profile_id>/setup', methods=['GET', 'POST'])
+def profile_setup(profile_id: int):
+    """Set number of cases and concentrations for a new profile (or empty profile)."""
+    prof = CalibrationProfile.query.get_or_404(profile_id)
+    existing_count = Pesticide.query.filter_by(profile_id=prof.id).count()
+    if request.method == 'GET':
+        return render_template(
+            'calibration_setup.html',
+            title="Profile setup",
+            profile=prof,
+            all_profiles=CalibrationProfile.query.order_by(CalibrationProfile.created_at.asc()).all(),
+            existing_cases=existing_count,
+        )
+    # POST: create cases and calibration points
+    try:
+        num_cases = int(request.form.get('num_cases', 0))
+        num_concentrations = int(request.form.get('num_concentrations', 0))
+    except (TypeError, ValueError):
+        num_cases = num_concentrations = 0
+    if num_cases < 1 or num_concentrations < 2:
+        flash('Number of cases must be at least 1; number of concentrations at least 2.', 'danger')
+        return redirect(url_for('profile_setup', profile_id=prof.id))
+    if existing_count > 0:
+        flash('Profile already has cases. Delete them first if you want to reconfigure.', 'warning')
+        return redirect(url_for('calibration'))
+    # Create placeholder points that pass validation: unique concentrations, rgb strictly decreasing
+    for i in range(num_cases):
+        key = f'case_{i + 1}'
+        display_name = f'Case {i + 1}'
+        pest = Pesticide(
+            profile_id=prof.id,
+            key=key,
+            display_name=display_name,
+            order_index=i,
+            active=True,
+        )
+        db.session.add(pest)
+        db.session.flush()
+        # Placeholder points: unique concentrations, rgb strictly decreasing (for validation)
+        for j in range(num_concentrations):
+            conc = j / max(1, num_concentrations - 1)
+            rgb = 400 - j * (300 // max(1, num_concentrations - 1))
+            db.session.add(CalibrationPoint(
+                pesticide_id=pest.id,
+                seq_index=j,
+                concentration=round(conc, 4),
+                rgb_sum=max(100, rgb),
+            ))
+    db.session.commit()
+    flash(f'Created {num_cases} case(s) with {num_concentrations} concentration point(s) each.', 'success')
+    return redirect(url_for('calibration'))
+
+
+@app.route('/profiles/<int:profile_id>/cases/<int:pesticide_id>/edit', methods=['GET', 'POST'])
+def calibration_case_edit(profile_id: int, pesticide_id: int):
+    """Edit a single case (pesticide) and its calibration dataset."""
+    prof = CalibrationProfile.query.get_or_404(profile_id)
+    pest = Pesticide.query.filter_by(id=pesticide_id, profile_id=prof.id).first_or_404()
+    if request.method == 'GET':
+        pts = sorted(pest.calibration_points, key=lambda cp: cp.seq_index)
+        return render_template(
+            'calibration_case_edit.html',
+            title="Edit case",
+            profile=prof,
+            case=pest,
+            points=[{"concentration": cp.concentration, "rgb_sum": cp.rgb_sum, "id": cp.id} for cp in pts],
+        )
+    # POST: save case and points
+    display_name = request.form.get('display_name', '').strip() or pest.display_name
+    key = request.form.get('key', '').strip().lower().replace(' ', '_') or pest.key
+    if not key:
+        key = pest.key
+    # Check key unique within profile (excluding current)
+    if Pesticide.query.filter_by(profile_id=prof.id).filter(Pesticide.id != pest.id).filter_by(key=key).first():
+        flash(f'Key "{key}" is already used by another case in this profile.', 'danger')
+        return redirect(url_for('calibration_case_edit', profile_id=prof.id, pesticide_id=pest.id))
+    pest.display_name = display_name
+    pest.key = key
+    grouped = {}
+    for k, v in request.form.items():
+        if k.startswith('concentration-'):
+            try:
+                row = int(k.split('-')[1])
+                grouped.setdefault(row, {})['concentration'] = float(v)
+            except (IndexError, ValueError):
+                continue
+        elif k.startswith('rgb-'):
+            try:
+                row = int(k.split('-')[1])
+                grouped.setdefault(row, {})['rgb_sum'] = int(v)
+            except (IndexError, ValueError):
+                continue
+    row_list = [grouped[idx] for idx in sorted(grouped.keys()) if 'concentration' in grouped[idx] and 'rgb_sum' in grouped[idx]]
+    ok, msg = validate_calibration_points(row_list)
+    if not ok:
+        flash(msg, 'danger')
+        return redirect(url_for('calibration_case_edit', profile_id=prof.id, pesticide_id=pest.id))
+    CalibrationPoint.query.filter_by(pesticide_id=pest.id).delete()
+    for seq_idx, row in enumerate(row_list):
+        db.session.add(CalibrationPoint(
+            pesticide_id=pest.id,
+            seq_index=seq_idx,
+            concentration=float(row['concentration']),
+            rgb_sum=int(row['rgb_sum']),
+        ))
+    db.session.commit()
+    flash('Case and calibration data saved.', 'success')
+    return redirect(url_for('calibration'))
+
 
 @app.route('/profiles/<int:profile_id>/export')
 def profiles_export(profile_id: int):
@@ -546,7 +796,7 @@ def settings():
 def settings_save():
     """Saves mode and theme settings."""
     mode = request.form.get('mode', 'default').strip().lower()
-    if mode not in ('default', 'customize'):
+    if mode not in ('default', 'customize', 'scientific'):
         flash('Invalid mode selected.', 'danger')
         return redirect(url_for('settings'))
     set_app_setting('mode', mode)
@@ -575,7 +825,7 @@ def data_clear():
 @app.route('/analysis')
 def analysis():
     """Renders the analysis page."""
-    return render_template('analysis.html', title="Analysis")
+    return render_template('analysis.html', title="Analysis", scientific_mode=(get_app_mode() == 'scientific'))
 
 @app.route('/camera')
 def camera():
@@ -618,12 +868,59 @@ def analysis_run():
             return redirect(url_for('analysis'))
     img = Image.open(full_path).convert('RGB')
     width, height = img.size
-    # Auto-pick points along horizontal midline
+    mode = get_app_mode()
+    if mode == 'scientific':
+        n = 5
+        y = height // 2
+        xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
+        results = []
+        points = []
+        for i in range(n):
+            x = xs[i]
+            r, g, b = sample_five_pixel_mean_rgb(img, x, y)
+            total = r + g + b
+            data = scientific_color_data(r, g, b)
+            points.append({"x": x, "y": y, "name": f"Point {i+1}"})
+            results.append({
+                "pesticide_key": f"point_{i+1}",
+                "pesticide_name": f"Point {i+1}",
+                "x": x,
+                "y": y,
+                "rgb_sum": total,
+                "concentration": 0,
+                "level": "—",
+                "scientific_data": data
+            })
+        run = Run(
+            profile_id=profile.id,
+            mode='scientific',
+            name=f"Run {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}",
+            image_path=os.path.join('static', 'uploads', subdir, filename),
+            used_normalization=False,
+            background_point_x=0,
+            background_point_y=0,
+            sampling_scheme='5-pixel'
+        )
+        db.session.add(run)
+        db.session.flush()
+        for r in results:
+            db.session.add(RunResult(
+                run_id=run.id,
+                pesticide_key=r["pesticide_key"],
+                pixel_x=r["x"],
+                pixel_y=r["y"],
+                rgb_sum=r["rgb_sum"],
+                concentration=0.0,
+                level="—",
+                scientific_data=json.dumps(r["scientific_data"])
+            ))
+        db.session.commit()
+        return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=True, run_id=run.id)
+    # Default/customize: calibration-based
     pests = get_active_pesticides(profile.id)
     n = max(1, min(10, len(pests)))
     y = height // 2
     xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
-    # Background normalization (optional)
     use_norm = (request.form.get('normalize') == 'on')
     bg_offsets = None
     norm_used_flag = False
@@ -632,7 +929,6 @@ def analysis_run():
         bg_offsets, norm_used_flag = compute_background_offsets(img)
         if not norm_used_flag:
             bg_offsets = None
-    # Compute results
     results = []
     points = []
     for i, pest in enumerate(pests[:n]):
@@ -652,10 +948,9 @@ def analysis_run():
             "concentration": round(conc, 2),
             "level": level
         })
-    # Persist run
     run = Run(
         profile_id=profile.id,
-        mode=get_app_mode(),
+        mode=mode,
         name=f"Run {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}",
         image_path=os.path.join('static', 'uploads', subdir, filename),
         used_normalization=bool(norm_used_flag),
@@ -676,7 +971,7 @@ def analysis_run():
             level=r["level"]
         ))
     db.session.commit()
-    return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points)
+    return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, run_id=run.id)
 
 @app.route('/analysis/preview', methods=['POST'])
 def analysis_preview():
@@ -711,11 +1006,18 @@ def analysis_preview():
             return redirect(url_for('analysis'))
     img = Image.open(full_path).convert('RGB')
     width, height = img.size
-    pests = get_active_pesticides(profile.id)
-    n = max(1, min(10, len(pests)))
-    y = height // 2
-    xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
-    points = [{"x": xs[i], "y": y, "name": pests[i].display_name} for i in range(n)]
+    scientific_mode = (get_app_mode() == 'scientific')
+    if scientific_mode:
+        n = 5
+        y = height // 2
+        xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
+        points = [{"x": xs[i], "y": y, "name": f"Point {i+1}"} for i in range(n)]
+    else:
+        pests = get_active_pesticides(profile.id)
+        n = max(1, min(10, len(pests)))
+        y = height // 2
+        xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
+        points = [{"x": xs[i], "y": y, "name": pests[i].display_name} for i in range(n)]
     return render_template(
         'analysis.html',
         title="Analysis",
@@ -723,7 +1025,8 @@ def analysis_preview():
         width=width,
         height=height,
         points=points,
-        results=None
+        results=None,
+        scientific_mode=scientific_mode
     )
 
 @app.route('/analysis/compute', methods=['POST'])
@@ -745,13 +1048,61 @@ def analysis_compute():
         return redirect(url_for('analysis'))
     full_path = image_path
     if not os.path.exists(full_path):
-        # try relative to project root
         full_path = os.path.join('.', image_path)
     if not os.path.exists(full_path):
         flash('Image file not found.', 'danger')
         return redirect(url_for('analysis'))
     img = Image.open(full_path).convert('RGB')
     width, height = img.size
+    scientific_mode = (get_app_mode() == 'scientific')
+    if scientific_mode:
+        pts_sorted = sorted(points[:5], key=lambda p: p.get('x', 0))
+        n = len(pts_sorted)
+        if n == 0:
+            flash('At least one point is required.', 'danger')
+            return redirect(url_for('analysis'))
+        results = []
+        for i in range(n):
+            x = int(pts_sorted[i].get('x', 0))
+            y = int(pts_sorted[i].get('y', 0))
+            r, g, b = sample_five_pixel_mean_rgb(img, x, y)
+            total = r + g + b
+            data = scientific_color_data(r, g, b)
+            results.append({
+                "pesticide_key": f"point_{i+1}",
+                "pesticide_name": f"Point {i+1}",
+                "x": x,
+                "y": y,
+                "rgb_sum": total,
+                "concentration": 0,
+                "level": "—",
+                "scientific_data": data
+            })
+        run = Run(
+            profile_id=profile.id,
+            mode='scientific',
+            name=f"Run {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}",
+            image_path=image_path,
+            used_normalization=False,
+            background_point_x=0,
+            background_point_y=0,
+            sampling_scheme='5-pixel'
+        )
+        db.session.add(run)
+        db.session.flush()
+        for r in results:
+            db.session.add(RunResult(
+                run_id=run.id,
+                pesticide_key=r["pesticide_key"],
+                pixel_x=r["x"],
+                pixel_y=r["y"],
+                rgb_sum=r["rgb_sum"],
+                concentration=0.0,
+                level="—",
+                scientific_data=json.dumps(r["scientific_data"])
+            ))
+        db.session.commit()
+        return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=True, run_id=run.id)
     use_norm = (request.form.get('normalize') == 'on')
     bg_offsets = None
     norm_used_flag = False
@@ -762,7 +1113,6 @@ def analysis_compute():
             bg_offsets = None
     pests = get_active_pesticides(profile.id)
     n = min(len(points), len(pests))
-    # Sort points left-to-right to map to pesticide order
     pts_sorted = sorted(points[:n], key=lambda p: p.get('x', 0))
     results = []
     for i in range(n):
@@ -814,6 +1164,7 @@ def calibration():
     profile = get_active_profile()
     pesticides = []
     all_profiles = CalibrationProfile.query.order_by(CalibrationProfile.created_at.asc()).all()
+    profile_case_counts = {p.id: Pesticide.query.filter_by(profile_id=p.id).count() for p in all_profiles}
     if profile:
         q = Pesticide.query.filter_by(profile_id=profile.id, active=True).order_by(Pesticide.order_index.asc()).all()
         for p in q:
@@ -827,7 +1178,7 @@ def calibration():
                 "thresholds": bands
             })
     is_customize = (get_app_mode() == 'customize')
-    return render_template('calibration.html', title="Calibration", profile=profile, pesticides=pesticides, is_customize=is_customize, all_profiles=all_profiles)
+    return render_template('calibration.html', title="Calibration", profile=profile, pesticides=pesticides, is_customize=is_customize, all_profiles=all_profiles, profile_case_counts=profile_case_counts)
 
 @app.route('/calibration/save', methods=['POST'])
 def calibration_save():
@@ -900,9 +1251,19 @@ def public_files(filename: str):
     return send_from_directory('public', filename)
 
     
+def _ensure_scientific_data_column():
+    """Add scientific_data column to run_result if missing (for existing DBs)."""
+    from sqlalchemy import text
+    try:
+        db.session.execute(text("ALTER TABLE run_result ADD COLUMN scientific_data TEXT"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        _ensure_scientific_data_column()
         seed_defaults()
     app.run(port=3000, debug=False)
     # development
