@@ -5,7 +5,7 @@
     <div class="card-body">
       <h5 class="card-title mb-2">Edit case: {{ case.display_name }}</h5>
       <p class="text-muted small mb-3">Profile: <strong>{{ profile.name }}</strong>. Update case details and calibration dataset (concentration vs RGB).</p>
-      <form method="post" action="{{ url_for('calibration_case_edit', profile_id=profile.id, pesticide_id=case.id) }}">
+      <form method="post" action="{{ url_for('profiles.calibration_case_edit', profile_id=profile.id, pesticide_id=case.id) }}">
         <div class="row g-3 mb-3">
           <div class="col-12 col-md-6">
             <label class="form-label">Display name</label>
@@ -52,7 +52,7 @@
         </div>
         <div class="d-flex gap-2">
           <button type="submit" class="btn btn-primary">Save case</button>
-          <a href="{{ url_for('calibration') }}" class="btn btn-outline-secondary">Cancel</a>
+          <a href="{{ url_for('calibration.calibration') }}" class="btn btn-outline-secondary">Cancel</a>
         </div>
       </form>
     </div>

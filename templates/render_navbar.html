@@ -2,8 +2,8 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top" style="border-bottom: 1px solid var(--bs-border-color);">
   <div class="container-fluid">
     <div class="d-flex align-items-center">
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('analysis') }}">
-        <img src="{{ url_for('public_files', filename='BioAP_Logo.PNG') }}" alt="BioAP" style="height:28px;" class="me-2 align-text-bottom">
+      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('analysis.analysis') }}">
+        <img src="{{ url_for('pages.public_files', filename='BioAP_Logo.PNG') }}" alt="BioAP" style="height:28px;" class="me-2 align-text-bottom">
         BioAP
       </a>
       <span class="navbar-text fs-5 fw-bold ms-3 my-0 py-0">
@@ -20,31 +20,31 @@
     <div class="d-none d-lg-flex ms-auto">
       <ul class="navbar-nav flex-row align-items-center">
         <li class="nav-item px-2">
-          <a class="nav-link text-secondary" href="{{ url_for('analysis') }}">
+          <a class="nav-link text-secondary" href="{{ url_for('analysis.analysis') }}">
             <i class="bi bi-camera"></i>
             <span class="ms-1">Analysis</span>
           </a>
         </li>
         <li class="nav-item px-2">
-          <a class="nav-link text-secondary" href="{{ url_for('calibration') }}">
+          <a class="nav-link text-secondary" href="{{ url_for('calibration.calibration') }}">
             <i class="bi bi-sliders"></i>
             <span class="ms-1">Calibration</span>
           </a>
         </li>
         <li class="nav-item px-2">
-          <a class="nav-link text-secondary" href="{{ url_for('history') }}">
+          <a class="nav-link text-secondary" href="{{ url_for('history.history') }}">
             <i class="bi bi-clock-history"></i>
             <span class="ms-1">History</span>
           </a>
         </li>
         <li class="nav-item px-2">
-          <a class="nav-link text-secondary" href="{{ url_for('settings') }}">
+          <a class="nav-link text-secondary" href="{{ url_for('settings.settings') }}">
             <i class="bi bi-gear-fill"></i>
             <span class="ms-1">Settings</span>
           </a>
         </li>
         <li class="nav-item px-2">
-          <a class="nav-link text-secondary" href="{{ url_for('about') }}">
+          <a class="nav-link text-secondary" href="{{ url_for('pages.about') }}">
             <i class="bi bi-info-circle"></i>
             <span class="ms-1">About</span>
           </a>
@@ -59,31 +59,31 @@
     </div>
     <div class="fixed-bottom d-lg-none bg-white shadow-lg" style="border-top: 1px solid var(--bs-border-color);">
       <div class="d-flex justify-content-around p-2">
-        <a href="{{ url_for('analysis') }}" class="btn btn-link text-secondary text-decoration-none">
+        <a href="{{ url_for('analysis.analysis') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-camera fs-3"></i>
             <small>Analysis</small>
           </div>
         </a>
-        <a href="{{ url_for('calibration') }}" class="btn btn-link text-secondary text-decoration-none">
+        <a href="{{ url_for('calibration.calibration') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-sliders fs-3"></i>
             <small>Calibration</small>
           </div>
         </a>
-        <a href="{{ url_for('history') }}" class="btn btn-link text-secondary text-decoration-none">
+        <a href="{{ url_for('history.history') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-clock-history fs-3"></i>
             <small>History</small>
           </div>
         </a>
-        <a href="{{ url_for('settings') }}" class="btn btn-link text-secondary text-decoration-none">
+        <a href="{{ url_for('settings.settings') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-gear-fill fs-3"></i>
             <small>Settings</small>
           </div>
         </a>
-        <a href="{{ url_for('about') }}" class="btn btn-link text-secondary text-decoration-none">
+        <a href="{{ url_for('pages.about') }}" class="btn btn-link text-secondary text-decoration-none">
           <div class="d-flex flex-column align-items-center">
             <i class="bi bi-info-circle fs-3"></i>
             <small>About</small>

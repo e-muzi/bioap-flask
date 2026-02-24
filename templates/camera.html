@@ -4,7 +4,7 @@
   <div class="card">
     <div class="card-body">
       <h5 class="card-title mb-3">Capture Photo</h5>
-      <form method="post" action="{{ url_for('analysis_preview') }}" id="camera-form">
+      <form method="post" action="{{ url_for('analysis.analysis_preview') }}" id="camera-form">
         <input type="hidden" name="captured_data" id="captured_data">
         <div class="border rounded p-2 mb-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
@@ -26,7 +26,7 @@
           <div class="form-text mt-2">Click Capture to freeze a frame. Then click "Use photo" to analyze.</div>
         </div>
         <div class="d-flex gap-2 justify-content-end">
-          <a href="{{ url_for('analysis') }}" class="btn btn-outline-secondary">Back to Analysis</a>
+          <a href="{{ url_for('analysis.analysis') }}" class="btn btn-outline-secondary">Back to Analysis</a>
           <button type="submit" class="btn btn-primary" id="usePhotoBtn" disabled>Use photo</button>
         </div>
       </form>

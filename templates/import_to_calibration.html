@@ -5,7 +5,7 @@
     <div class="card-body">
       <h5 class="card-title mb-2">Import run results to calibration</h5>
       <p class="text-muted small mb-3">Run: <strong>{{ run.name }}</strong>. Choose a profile and, for each result, the target case and concentration to add as a new calibration point.</p>
-      <form method="post" action="{{ url_for('import_to_calibration', run_id=run.id) }}">
+      <form method="post" action="{{ url_for('history.import_to_calibration', run_id=run.id) }}">
         <div class="mb-3">
           <label class="form-label">Target profile</label>
           <select name="profile_id" id="profile_id" class="form-select" required>
@@ -45,7 +45,7 @@
         </div>
         <div class="d-flex gap-2 mt-3">
           <button type="submit" class="btn btn-primary">Import to calibration</button>
-          <a href="{{ url_for('history_detail', run_id=run.id) }}" class="btn btn-outline-secondary">Cancel</a>
+          <a href="{{ url_for('history.history_detail', run_id=run.id) }}" class="btn btn-outline-secondary">Cancel</a>
         </div>
       </form>
     </div>

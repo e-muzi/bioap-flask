@@ -12,7 +12,7 @@
             <label class="form-label">Active profile</label>
             <div class="input-group">
               <span class="input-group-text">{{ profile.name }}</span>
-              <a href="{{ url_for('profiles_export', profile_id=profile.id) }}" class="btn btn-outline-primary">Export</a>
+              <a href="{{ url_for('profiles.profiles_export', profile_id=profile.id) }}" class="btn btn-outline-primary">Export</a>
             </div>
           </div>
           <div class="col-12">
@@ -40,15 +40,15 @@
                       </td>
                       <td class="text-end">
                         {% if profile_case_counts.get(p.id, 0) == 0 %}
-                          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profile_setup', profile_id=p.id) }}">Setup</a>
+                          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profiles.profile_setup', profile_id=p.id) }}">Setup</a>
                         {% endif %}
-                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('profiles_export', profile_id=p.id) }}">Export</a>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('profiles.profiles_export', profile_id=p.id) }}">Export</a>
                         {% if not p.is_active %}
-                          <form method="post" action="{{ url_for('profiles_activate', profile_id=p.id) }}" class="d-inline">
+                          <form method="post" action="{{ url_for('profiles.profiles_activate', profile_id=p.id) }}" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
                           </form>
                           {% if p.name|lower != 'default' %}
-                          <form method="post" action="{{ url_for('profiles_delete', profile_id=p.id) }}" class="d-inline" onsubmit="return confirm('Delete profile {{ p.name }}?');">
+                          <form method="post" action="{{ url_for('profiles.profiles_delete', profile_id=p.id) }}" class="d-inline" onsubmit="return confirm('Delete profile {{ p.name }}?');">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                           </form>
                           {% endif %}
@@ -62,7 +62,7 @@
             </div>
           </div>
           <div class="col-12 col-lg-6">
-            <form class="row g-2" method="post" action="{{ url_for('profiles_create') }}">
+            <form class="row g-2" method="post" action="{{ url_for('profiles.profiles_create') }}">
               <div class="col-8">
                 <label class="form-label">Create profile</label>
                 <input type="text" name="name" class="form-control" placeholder="New profile name" required>
@@ -74,7 +74,7 @@
             </form>
           </div>
           <div class="col-12 col-lg-6">
-            <form class="row g-2" method="post" action="{{ url_for('profiles_clone', profile_id=profile.id) }}">
+            <form class="row g-2" method="post" action="{{ url_for('profiles.profiles_clone', profile_id=profile.id) }}">
               <div class="col-8">
                 <label class="form-label">Clone active as</label>
                 <input type="text" name="name" class="form-control" placeholder="{{ profile.name }} Copy">
@@ -86,7 +86,7 @@
             </form>
           </div>
           <div class="col-12 col-lg-6">
-            <form class="row g-2" method="post" action="{{ url_for('profiles_import') }}" enctype="multipart/form-data">
+            <form class="row g-2" method="post" action="{{ url_for('profiles.profiles_import') }}" enctype="multipart/form-data">
               <div class="col-8">
                 <label class="form-label">Import profile (JSON)</label>
                 <input type="file" name="file" class="form-control" accept="application/json" required>
@@ -104,7 +104,7 @@
   </div>
 
   {% if pesticides and pesticides|length > 0 %}
-  <form method="post" action="{{ url_for('calibration_save') }}">
+  <form method="post" action="{{ url_for('calibration.calibration_save') }}">
     {% for pest in pesticides %}
       <div class="card mb-3">
         <div class="card-body">
@@ -113,7 +113,7 @@
               <h6 class="mb-0">{{ pest.display_name }}</h6>
               <span class="badge bg-secondary">{{ pest.key }}</span>
             </div>
-            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('calibration_case_edit', profile_id=profile.id, pesticide_id=pest.id) }}">Edit case</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profiles.calibration_case_edit', profile_id=profile.id, pesticide_id=pest.id) }}">Edit case</a>
           </div>
           <div class="table-responsive">
             <table class="table table-sm align-middle">
@@ -209,7 +209,7 @@
     <div class="alert alert-info">
       No cases found in the active profile.
       {% if profile and profile_case_counts.get(profile.id, 0) == 0 %}
-        <a href="{{ url_for('profile_setup', profile_id=profile.id) }}">Complete setup</a> to set the number of cases and concentrations.
+        <a href="{{ url_for('profiles.profile_setup', profile_id=profile.id) }}">Complete setup</a> to set the number of cases and concentrations.
       {% endif %}
     </div>
   {% endif %}

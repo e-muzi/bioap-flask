@@ -7,10 +7,10 @@
       <p class="text-muted small mb-3">Set the number of cases (data points) and the number of concentrations (calibration curve points) for each case.</p>
       {% if existing_cases > 0 %}
         <div class="alert alert-info mb-0">
-          This profile already has {{ existing_cases }} case(s). <a href="{{ url_for('calibration') }}">Return to calibration</a> to edit them, or delete the profile to start over.
+          This profile already has {{ existing_cases }} case(s). <a href="{{ url_for('calibration.calibration') }}">Return to calibration</a> to edit them, or delete the profile to start over.
         </div>
       {% else %}
-        <form method="post" action="{{ url_for('profile_setup', profile_id=profile.id) }}" class="row g-3">
+        <form method="post" action="{{ url_for('profiles.profile_setup', profile_id=profile.id) }}" class="row g-3">
           <div class="col-12 col-md-6">
             <label class="form-label">Number of cases (data points)</label>
             <input type="number" name="num_cases" class="form-control" min="1" max="50" value="3" required>
@@ -23,7 +23,7 @@
           </div>
           <div class="col-12 d-flex gap-2">
             <button type="submit" class="btn btn-primary">Create cases</button>
-            <a href="{{ url_for('calibration') }}" class="btn btn-outline-secondary">Cancel</a>
+            <a href="{{ url_for('calibration.calibration') }}" class="btn btn-outline-secondary">Cancel</a>
           </div>
         </form>
       {% endif %}

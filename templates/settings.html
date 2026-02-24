@@ -9,7 +9,7 @@
         <h4 class="mb-0">Application Settings</h4>
       </div>
       <div class="card-body">
-        <form method="post" action="{{ url_for('settings_save') }}">
+        <form method="post" action="{{ url_for('settings.settings_save') }}">
           <div class="mb-3">
             <label class="form-label d-block">Mode</label>
             <div class="form-check form-check-inline">
@@ -38,7 +38,7 @@
         <h5 class="mb-0">Data management</h5>
       </div>
       <div class="card-body">
-        <form method="post" action="{{ url_for('data_clear') }}" onsubmit="return confirm('Clear all analysis runs? This cannot be undone.');">
+        <form method="post" action="{{ url_for('settings.data_clear') }}" onsubmit="return confirm('Clear all analysis runs? This cannot be undone.');">
           <p class="mb-2 text-muted">Remove all saved analysis runs and their images.</p>
           <button type="submit" class="btn btn-outline-danger">Clear all runs</button>
         </form>

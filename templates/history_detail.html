@@ -8,8 +8,8 @@
           <div class="d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">{{ run.name }}</h5>
             <div>
-              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('history_export', run_id=run.id) }}">Export JSON</a>
-              <form method="post" action="{{ url_for('history_delete', run_id=run.id) }}" class="d-inline" onsubmit="return confirm('Delete this run?');">
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('history.history_export', run_id=run.id) }}">Export JSON</a>
+              <form method="post" action="{{ url_for('history.history_delete', run_id=run.id) }}" class="d-inline" onsubmit="return confirm('Delete this run?');">
                 <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
               </form>
             </div>
@@ -40,7 +40,7 @@
       <div class="card">
         <div class="card-body">
           <h6 class="mb-3">Rename</h6>
-          <form method="post" action="{{ url_for('history_rename', run_id=run.id) }}" class="d-flex gap-2">
+          <form method="post" action="{{ url_for('history.history_rename', run_id=run.id) }}" class="d-flex gap-2">
             <input type="text" class="form-control form-control-sm" name="name" value="{{ run.name }}" required>
             <button class="btn btn-sm btn-primary" type="submit">Save</button>
           </form>
@@ -51,7 +51,7 @@
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="mb-0">Results</h6>
             {% if not scientific_mode %}
-            <a href="{{ url_for('import_to_calibration', run_id=run.id) }}" class="btn btn-sm btn-outline-primary">Import to calibration</a>
+            <a href="{{ url_for('history.import_to_calibration', run_id=run.id) }}" class="btn btn-sm btn-outline-primary">Import to calibration</a>
             {% endif %}
           </div>
           <div class="table-responsive">

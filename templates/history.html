@@ -2,7 +2,7 @@
 {% block title %}History - BioAP{% endblock %}
 
 {% block content %}
-  <form class="row g-2 mb-3" method="get" action="{{ url_for('history') }}">
+  <form class="row g-2 mb-3" method="get" action="{{ url_for('history.history') }}">
     <div class="col-12 col-md-6">
       <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Search runs by name">
     </div>
@@ -36,14 +36,14 @@
         <tbody>
           {% for item in history %}
           <tr>
-            <td><a href="{{ url_for('history_detail', run_id=item.id) }}">{{ item.name }}</a></td>
+            <td><a href="{{ url_for('history.history_detail', run_id=item.id) }}">{{ item.name }}</a></td>
             <td>{{ item.created_at }}</td>
             <td class="text-capitalize">{{ item.mode }}</td>
             <td>{{ item.profile }}</td>
             <td class="text-end">
-              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('history_detail', run_id=item.id) }}">View</a>
-              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('history_export', run_id=item.id) }}">Export</a>
-              <form method="post" action="{{ url_for('history_delete', run_id=item.id) }}" class="d-inline" onsubmit="return confirm('Delete this run?');">
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('history.history_detail', run_id=item.id) }}">View</a>
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('history.history_export', run_id=item.id) }}">Export</a>
+              <form method="post" action="{{ url_for('history.history_delete', run_id=item.id) }}" class="d-inline" onsubmit="return confirm('Delete this run?');">
                 <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
               </form>
             </td>
