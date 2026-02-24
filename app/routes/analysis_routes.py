@@ -87,7 +87,7 @@ def analysis_run():
     mode = get_app_mode()
     if mode == 'scientific':
         n = 5
-        y = height // 2
+        y = height // 2.65  # preset points 1.5 from top (tuned up from center)
         xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
         results = []
         points = []
@@ -132,7 +132,7 @@ def analysis_run():
         return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=True, run_id=run.id)
     pests = get_active_pesticides(profile.id)
     n = max(1, min(10, len(pests)))
-    y = height // 2
+    y = height // 2.65  # preset points 1/4 from top (tuned up from center)
     xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
     use_norm = (request.form.get('normalize') == 'on')
     bg_offsets = None
@@ -205,13 +205,13 @@ def analysis_preview():
     scientific_mode = (get_app_mode() == 'scientific')
     if scientific_mode:
         n = 5
-        y = height // 2
+        y = height // 2.65  # preset points 1/4 from top (tuned up from center)
         xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
         points = [{"x": xs[i], "y": y, "name": f"Point {i+1}"} for i in range(n)]
     else:
         pests = get_active_pesticides(profile.id)
         n = max(1, min(10, len(pests)))
-        y = height // 2
+        y = height // 2.65  # preset points 1/4 from top (tuned up from center)
         xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
         points = [{"x": xs[i], "y": y, "name": pests[i].display_name} for i in range(n)]
     return render_template(
