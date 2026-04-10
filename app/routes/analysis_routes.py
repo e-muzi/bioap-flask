@@ -25,11 +25,31 @@ from app.services import (
 
 bp = Blueprint('analysis', __name__)
 
+HAAS_CURVE = [
+    {"rgb_sum": 34, "concentration": 120.0},
+    {"rgb_sum": 49, "concentration": 24.0},
+    {"rgb_sum": 54, "concentration": 4.8},
+]
+
+
+def _haas_control_label(g_value: int) -> str:
+    if g_value >= 200:
+        return '+ve control'
+    if g_value <= 28:
+        return '-ve control'
+    return ''
+
 
 @bp.route('/analysis')
 def analysis():
     """Renders the analysis page."""
-    return render_template('analysis.html', title="Analysis", scientific_mode=(get_app_mode() == 'scientific'))
+    mode = get_app_mode()
+    return render_template(
+        'analysis.html',
+        title="Analysis",
+        scientific_mode=(mode == 'scientific'),
+        haas_mode=(mode == 'haas')
+    )
 
 
 @bp.route('/camera')
@@ -129,7 +149,51 @@ def analysis_run():
                 scientific_data=json.dumps(r["scientific_data"])
             ))
         db.session.commit()
-        return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=True, run_id=run.id)
+        return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=True, haas_mode=False, run_id=run.id)
+    if mode == 'haas':
+        n = 5
+        y = height // 2.65
+        xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
+        results = []
+        points = []
+        for i in range(n):
+            x = xs[i]
+            r, g, b = sample_five_pixel_mean_rgb(img, x, y)
+            control_label = _haas_control_label(g)
+            conc = None if control_label else interpolate_concentration(HAAS_CURVE, g)
+            points.append({"x": x, "y": y, "name": f"HAAs {i+1}"})
+            results.append({
+                "pesticide_key": f"haas_{i+1}",
+                "pesticide_name": f"HAAs {i+1}",
+                "x": x, "y": y,
+                "rgb_sum": g,
+                "g_value": g,
+                "concentration": round(conc, 2) if conc is not None else None,
+                "level": control_label or "—"
+            })
+        run = Run(
+            profile_id=profile.id,
+            mode='haas',
+            name=f"Run {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}",
+            image_path=image_path,
+            used_normalization=False,
+            background_point_x=0,
+            background_point_y=0,
+            sampling_scheme='5-pixel'
+        )
+        db.session.add(run)
+        db.session.flush()
+        for r in results:
+            db.session.add(RunResult(
+                run_id=run.id,
+                pesticide_key=r["pesticide_key"],
+                pixel_x=r["x"], pixel_y=r["y"],
+                rgb_sum=r["g_value"],
+                concentration=float(r["concentration"] if r["concentration"] is not None else 0.0),
+                level=r["level"]
+            ))
+        db.session.commit()
+        return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=False, haas_mode=True, run_id=run.id)
     pests = get_active_pesticides(profile.id)
     n = max(1, min(10, len(pests)))
     y = height // 2.65  # preset points 1/4 from top (tuned up from center)
@@ -182,7 +246,7 @@ def analysis_run():
             level=r["level"]
         ))
     db.session.commit()
-    return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, run_id=run.id)
+    return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=False, haas_mode=False, run_id=run.id)
 
 
 @bp.route('/analysis/preview', methods=['POST'])
@@ -202,12 +266,19 @@ def analysis_preview():
         flash('Failed to read image.', 'danger')
         return redirect(url_for('analysis.analysis'))
     width, height = img.size
-    scientific_mode = (get_app_mode() == 'scientific')
+    mode = get_app_mode()
+    scientific_mode = (mode == 'scientific')
+    haas_mode = (mode == 'haas')
     if scientific_mode:
         n = 5
         y = height // 2.65  # preset points 1/4 from top (tuned up from center)
         xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
         points = [{"x": xs[i], "y": y, "name": f"Point {i+1}"} for i in range(n)]
+    elif haas_mode:
+        n = 5
+        y = height // 2.65
+        xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
+        points = [{"x": xs[i], "y": y, "name": f"HAAs {i+1}"} for i in range(n)]
     else:
         pests = get_active_pesticides(profile.id)
         n = max(1, min(10, len(pests)))
@@ -222,7 +293,8 @@ def analysis_preview():
         height=height,
         points=points,
         results=None,
-        scientific_mode=scientific_mode
+        scientific_mode=scientific_mode,
+        haas_mode=haas_mode
     )
 
 
@@ -251,7 +323,9 @@ def analysis_compute():
         return redirect(url_for('analysis.analysis'))
     img = Image.open(full_path).convert('RGB')
     width, height = img.size
-    scientific_mode = (get_app_mode() == 'scientific')
+    mode = get_app_mode()
+    scientific_mode = (mode == 'scientific')
+    haas_mode = (mode == 'haas')
     if scientific_mode:
         pts_sorted = sorted(points[:5], key=lambda p: p.get('x', 0))
         n = len(pts_sorted)
@@ -297,7 +371,52 @@ def analysis_compute():
                 scientific_data=json.dumps(r["scientific_data"])
             ))
         db.session.commit()
-        return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=True, run_id=run.id)
+        return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=True, haas_mode=False, run_id=run.id)
+    if haas_mode:
+        pts_sorted = sorted(points, key=lambda p: p.get('x', 0))
+        n = len(pts_sorted)
+        if n == 0:
+            flash('At least one point is required.', 'danger')
+            return redirect(url_for('analysis.analysis'))
+        results = []
+        for i in range(n):
+            x = int(pts_sorted[i].get('x', 0))
+            y = int(pts_sorted[i].get('y', 0))
+            _, g, _ = sample_five_pixel_mean_rgb(img, x, y)
+            control_label = _haas_control_label(g)
+            conc = None if control_label else interpolate_concentration(HAAS_CURVE, g)
+            results.append({
+                "pesticide_key": f"haas_{i+1}",
+                "pesticide_name": f"HAAs {i+1}",
+                "x": x, "y": y,
+                "rgb_sum": g,
+                "g_value": g,
+                "concentration": round(conc, 2) if conc is not None else None,
+                "level": control_label or "—"
+            })
+        run = Run(
+            profile_id=profile.id,
+            mode='haas',
+            name=f"Run {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}",
+            image_path=image_path,
+            used_normalization=False,
+            background_point_x=0,
+            background_point_y=0,
+            sampling_scheme='5-pixel'
+        )
+        db.session.add(run)
+        db.session.flush()
+        for r in results:
+            db.session.add(RunResult(
+                run_id=run.id,
+                pesticide_key=r["pesticide_key"],
+                pixel_x=r["x"], pixel_y=r["y"],
+                rgb_sum=r["g_value"],
+                concentration=float(r["concentration"] if r["concentration"] is not None else 0.0),
+                level=r["level"]
+            ))
+        db.session.commit()
+        return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=False, haas_mode=True, run_id=run.id)
     use_norm = (request.form.get('normalize') == 'on')
     bg_offsets = None
     norm_used_flag = False
@@ -349,4 +468,4 @@ def analysis_compute():
             level=r["level"]
         ))
     db.session.commit()
-    return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results])
+    return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=False, haas_mode=False)

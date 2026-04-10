@@ -24,7 +24,7 @@ def settings():
 def settings_save():
     """Saves mode and theme settings."""
     mode = request.form.get('mode', 'default').strip().lower()
-    if mode not in ('default', 'customize', 'scientific'):
+    if mode not in ('default', 'customize', 'scientific', 'haas'):
         flash('Invalid mode selected.', 'danger')
         return redirect(url_for('settings.settings'))
     set_app_setting('mode', mode)

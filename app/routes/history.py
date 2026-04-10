@@ -11,6 +11,16 @@ from app.models import Run, Pesticide, CalibrationProfile, CalibrationPoint
 bp = Blueprint('history', __name__, url_prefix='/history')
 
 
+def _mode_label(mode: str) -> str:
+    labels = {
+        'default': 'Pesticide mode',
+        'customize': 'Customize',
+        'haas': 'HAAs mode',
+        'scientific': 'Scientific',
+    }
+    return labels.get((mode or '').lower(), mode or '')
+
+
 @bp.route('')
 def history():
     """List analysis runs with optional search."""
@@ -26,6 +36,7 @@ def history():
             "name": r.name,
             "created_at": r.created_at.strftime("%Y-%m-%d %H:%M"),
             "mode": r.mode,
+            "mode_label": _mode_label(r.mode),
             "profile": r.profile.name if r.profile else "",
             "image_path": r.image_path
         })
@@ -64,7 +75,17 @@ def history_detail(run_id: int):
                     img_width, img_height = im.size
         except Exception:
             pass
-    return render_template('history_detail.html', title=run.name, run=run, results=results, scientific_mode=scientific_mode, img_width=img_width, img_height=img_height)
+    return render_template(
+        'history_detail.html',
+        title=run.name,
+        run=run,
+        results=results,
+        scientific_mode=scientific_mode,
+        haas_mode=(run.mode == 'haas'),
+        mode_label=_mode_label(run.mode),
+        img_width=img_width,
+        img_height=img_height
+    )
 
 
 @bp.route('/<int:run_id>/rename', methods=['POST'])

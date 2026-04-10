@@ -27,6 +27,6 @@ def set_app_setting(key, value):
 
 def get_app_mode():
     mode = get_app_setting('mode', 'default')
-    if mode not in ('default', 'customize', 'scientific'):
+    if mode not in ('default', 'customize', 'scientific', 'haas'):
         mode = 'default'
     return mode

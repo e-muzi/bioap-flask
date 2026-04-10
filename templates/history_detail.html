@@ -15,7 +15,7 @@
             </div>
           </div>
           <div class="text-muted small mb-3">
-            {{ run.created_at.strftime('%Y-%m-%d %H:%M') }} • Mode: {{ run.mode }} • Profile: {{ run.profile.name if run.profile else '' }}
+            {{ run.created_at.strftime('%Y-%m-%d %H:%M') }} • Mode: {{ mode_label }} • Profile: {{ run.profile.name if run.profile else '' }}
           </div>
           {% if scientific_mode and img_width and img_height %}
           <div class="position-relative d-inline-block" id="history-detail-markers">
@@ -50,7 +50,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="mb-0">Results</h6>
-            {% if not scientific_mode %}
+            {% if (not scientific_mode) and (not haas_mode) %}
             <a href="{{ url_for('history.import_to_calibration', run_id=run.id) }}" class="btn btn-sm btn-outline-primary">Import to calibration</a>
             {% endif %}
           </div>
@@ -78,6 +78,27 @@
                   {% else %}
                   <td colspan="4" class="text-muted">—</td>
                   {% endif %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% elif haas_mode %}
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Sample</th>
+                  <th class="text-end">G value</th>
+                  <th class="text-end">Conc (ug/L)</th>
+                  <th class="text-end">Recognition</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in results %}
+                <tr>
+                  <td>{{ r.pesticide_key }}</td>
+                  <td class="text-end">{{ r.rgb_sum }}</td>
+                  <td class="text-end">{{ '%.2f'|format(r.concentration) if r.level == '—' else '—' }}</td>
+                  <td class="text-end">{{ r.level }}</td>
                 </tr>
                 {% endfor %}
               </tbody>

@@ -38,7 +38,7 @@
           <tr>
             <td><a href="{{ url_for('history.history_detail', run_id=item.id) }}">{{ item.name }}</a></td>
             <td>{{ item.created_at }}</td>
-            <td class="text-capitalize">{{ item.mode }}</td>
+            <td>{{ item.mode_label }}</td>
             <td>{{ item.profile }}</td>
             <td class="text-end">
               <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('history.history_detail', run_id=item.id) }}">View</a>
