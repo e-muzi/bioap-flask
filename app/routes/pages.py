@@ -1,6 +1,6 @@
 """Root, about, and static public file routes."""
 import os
-from flask import Blueprint, redirect, url_for, render_template, send_from_directory, current_app
+from flask import Blueprint, abort, redirect, url_for, render_template, send_from_directory, current_app
 
 bp = Blueprint('pages', __name__)
 
@@ -17,8 +17,14 @@ def about():
     return render_template('about.html', title="About")
 
 
+# Served only via password-protected download (see settings_routes.download_testimg).
+_PROTECTED_PUBLIC_BASENAMES = frozenset({'testIMG.png'})
+
+
 @bp.route('/public/<path:filename>')
 def public_files(filename: str):
     """Serve assets from the project 'public' directory (e.g., logo)."""
+    if os.path.basename(filename) in _PROTECTED_PUBLIC_BASENAMES:
+        abort(404)
     root = current_app.config.get('PROJECT_ROOT', '.')
     return send_from_directory(os.path.join(root, 'public'), filename)

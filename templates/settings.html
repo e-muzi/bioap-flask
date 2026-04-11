@@ -39,6 +39,23 @@
     </div>
     <div class="card shadow-sm mt-3">
       <div class="card-header">
+        <h5 class="mb-0">Reference image</h5>
+      </div>
+      <div class="card-body">
+        <p class="mb-2 text-muted">Download the assay reference image (<code>testIMG.png</code>) after entering the access password.</p>
+        <form method="post" action="{{ url_for('settings.download_testimg') }}" class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <label for="testimgPassword" class="form-label">Password</label>
+            <input type="password" class="form-control" id="testimgPassword" name="password" autocomplete="off" required>
+          </div>
+          <div class="col-md-6">
+            <button type="submit" class="btn btn-outline-primary">Download image</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">
         <h5 class="mb-0">Data management</h5>
       </div>
       <div class="card-body">
