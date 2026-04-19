@@ -2,7 +2,7 @@
 import os
 import secrets
 
-from flask import Blueprint, request, redirect, url_for, flash, render_template, send_from_directory, current_app
+from flask import Blueprint, request, redirect, url_for, flash, render_template, send_from_directory, current_app, session
 
 from app.extensions import db
 from app.models import Run
@@ -70,5 +70,7 @@ def data_clear():
         db.session.delete(r)
         deleted += 1
     db.session.commit()
+    # Same key as analysis_ui_snapshot in analysis_routes (clears restored analysis UI).
+    session.pop('analysis_ui_snapshot', None)
     flash(f'Cleared {deleted} runs.', 'success')
     return redirect(url_for('settings.settings'))

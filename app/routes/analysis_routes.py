@@ -5,7 +5,7 @@ import os
 import uuid
 from datetime import datetime
 
-from flask import Blueprint, request, redirect, url_for, flash, render_template
+from flask import Blueprint, request, redirect, url_for, flash, render_template, session, current_app
 from PIL import Image
 
 from app.extensions import db
@@ -25,6 +25,54 @@ from app.services import (
 
 bp = Blueprint('analysis', __name__)
 
+ANALYSIS_SESSION_KEY = 'analysis_ui_snapshot'
+
+
+def _safe_snapshot_image_path(image_path: str) -> bool:
+    """Reject path tricks; only allow project upload images."""
+    if not image_path or '..' in image_path:
+        return False
+    p = image_path.replace('\\', '/').strip().lstrip('/')
+    return p.startswith('static/uploads/')
+
+
+def _resolve_stored_image_path(image_path: str) -> str | None:
+    """Return a filesystem path if the upload image still exists."""
+    if not image_path or not _safe_snapshot_image_path(image_path):
+        return None
+    p = image_path.strip().lstrip('/')
+    root = current_app.config.get('PROJECT_ROOT', '.')
+    for candidate in (p, os.path.join(root, p)):
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def _persist_analysis_session(template_vars: dict) -> None:
+    """Remember analysis page state so GET /analysis can restore after navigating away."""
+    image_path = template_vars.get('image_path')
+    if not image_path:
+        session.pop(ANALYSIS_SESSION_KEY, None)
+        return
+    session[ANALYSIS_SESSION_KEY] = {
+        'image_path': image_path,
+        'width': template_vars['width'],
+        'height': template_vars['height'],
+        'points': template_vars.get('points'),
+        'results': template_vars.get('results'),
+        'scientific_mode': template_vars.get('scientific_mode', False),
+        'haas_mode': template_vars.get('haas_mode', False),
+        'run_id': template_vars.get('run_id'),
+    }
+
+
+def _render_analysis(**kwargs) -> str:
+    """Render analysis template and persist state for session restore."""
+    kwargs.setdefault('title', 'Analysis')
+    _persist_analysis_session(kwargs)
+    return render_template('analysis.html', **kwargs)
+
+
 HAAS_CURVE = [
     {"rgb_sum": 34, "concentration": 120.0},
     {"rgb_sum": 49, "concentration": 24.0},
@@ -43,6 +91,21 @@ def _haas_control_label(g_value: int) -> str:
 @bp.route('/analysis')
 def analysis():
     """Renders the analysis page."""
+    snap = session.get(ANALYSIS_SESSION_KEY)
+    if snap and snap.get('image_path') and _resolve_stored_image_path(snap['image_path']):
+        return render_template(
+            'analysis.html',
+            title='Analysis',
+            image_path=snap['image_path'],
+            width=snap['width'],
+            height=snap['height'],
+            points=snap.get('points'),
+            results=snap.get('results'),
+            scientific_mode=snap.get('scientific_mode', False),
+            haas_mode=snap.get('haas_mode', False),
+            run_id=snap.get('run_id'),
+        )
+    session.pop(ANALYSIS_SESSION_KEY, None)
     mode = get_app_mode()
     return render_template(
         'analysis.html',
@@ -149,7 +212,7 @@ def analysis_run():
                 scientific_data=json.dumps(r["scientific_data"])
             ))
         db.session.commit()
-        return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=True, haas_mode=False, run_id=run.id)
+        return _render_analysis(image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=True, haas_mode=False, run_id=run.id)
     if mode == 'haas':
         n = 5
         y = height // 2.65
@@ -193,7 +256,7 @@ def analysis_run():
                 level=r["level"]
             ))
         db.session.commit()
-        return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=False, haas_mode=True, run_id=run.id)
+        return _render_analysis(image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=False, haas_mode=True, run_id=run.id)
     pests = get_active_pesticides(profile.id)
     n = max(1, min(10, len(pests)))
     y = height // 2.65  # preset points 1/4 from top (tuned up from center)
@@ -246,7 +309,7 @@ def analysis_run():
             level=r["level"]
         ))
     db.session.commit()
-    return render_template('analysis.html', title="Analysis", image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=False, haas_mode=False, run_id=run.id)
+    return _render_analysis(image_path=run.image_path, results=results, width=width, height=height, points=points, scientific_mode=False, haas_mode=False, run_id=run.id)
 
 
 @bp.route('/analysis/preview', methods=['POST'])
@@ -285,9 +348,7 @@ def analysis_preview():
         y = height // 2.65  # preset points 1/4 from top (tuned up from center)
         xs = [int(round((i+1) * (width / (n + 1)))) for i in range(n)]
         points = [{"x": xs[i], "y": y, "name": pests[i].display_name} for i in range(n)]
-    return render_template(
-        'analysis.html',
-        title="Analysis",
+    return _render_analysis(
         image_path=image_path,
         width=width,
         height=height,
@@ -371,7 +432,7 @@ def analysis_compute():
                 scientific_data=json.dumps(r["scientific_data"])
             ))
         db.session.commit()
-        return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=True, haas_mode=False, run_id=run.id)
+        return _render_analysis(image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=True, haas_mode=False, run_id=run.id)
     if haas_mode:
         pts_sorted = sorted(points, key=lambda p: p.get('x', 0))
         n = len(pts_sorted)
@@ -416,7 +477,7 @@ def analysis_compute():
                 level=r["level"]
             ))
         db.session.commit()
-        return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=False, haas_mode=True, run_id=run.id)
+        return _render_analysis(image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=False, haas_mode=True, run_id=run.id)
     use_norm = (request.form.get('normalize') == 'on')
     bg_offsets = None
     norm_used_flag = False
@@ -468,4 +529,4 @@ def analysis_compute():
             level=r["level"]
         ))
     db.session.commit()
-    return render_template('analysis.html', title="Analysis", image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=False, haas_mode=False)
+    return _render_analysis(image_path=image_path, results=results, width=width, height=height, points=[{"x": r["x"], "y": r["y"]} for r in results], scientific_mode=False, haas_mode=False, run_id=run.id)
